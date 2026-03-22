@@ -1,7 +1,7 @@
 export type Task = {
   id: string
   name: string
-  xp: 10 | 25 | 50 | 100
+  xp: 10 | 25 | 50 | 100 | 500 | 1000
   repeatable: boolean
   completedAt?: string
 }

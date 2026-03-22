@@ -1,6 +1,6 @@
 import { AppState } from './types'
 
-const STORAGE_KEY = 'life-dashboard-v3'
+const STORAGE_KEY = 'life-dashboard-v4'
 
 export const DEFAULT_STATE: AppState = {
   playerName: 'Player',
@@ -37,6 +37,25 @@ export const DEFAULT_STATE: AppState = {
       tasks: [
         { id: 't6', name: 'Review budget', xp: 25, repeatable: false },
         { id: 't7', name: 'Log expenses', xp: 10, repeatable: true },
+      ],
+    },
+    {
+      id: 'g-test',
+      emoji: '🧪',
+      name: 'Rank Tester',
+      category: 'Test',
+      xp: 0,
+      tasks: [
+        { id: 'tt1', name: '⚡ Unlock Soldier (200 XP)', xp: 100, repeatable: false },
+        { id: 'tt2', name: '⚡ Unlock Fighter (600 XP)', xp: 500, repeatable: false },
+        { id: 'tt3', name: '⚡ Unlock Warrior (1300 XP)', xp: 1000, repeatable: false },
+        { id: 'tt4', name: '⚡ Unlock Guardian (2500 XP)', xp: 1000, repeatable: false },
+        { id: 'tt5', name: '⚡ Unlock Veteran (4200 XP)', xp: 1000, repeatable: false },
+        { id: 'tt6', name: '⚡ Unlock Champion (6500 XP)', xp: 1000, repeatable: false },
+        { id: 'tt7', name: '⚡ Unlock Gladiator (9000 XP)', xp: 1000, repeatable: false },
+        { id: 'tt8', name: '⚡ Unlock Elite (11500 XP)', xp: 1000, repeatable: false },
+        { id: 'tt9', name: '⚡ Unlock Legend (14000 XP)', xp: 1000, repeatable: false },
+        { id: 'tt10', name: '🐐 Unlock Immortal (14400 XP)', xp: 500, repeatable: false },
       ],
     },
   ],

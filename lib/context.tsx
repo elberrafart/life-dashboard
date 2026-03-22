@@ -128,7 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLoaded(true)
   }, [])
 
-  // Debounced autosave — 800ms after last change
+  // Autosave — triggers immediately on any action (100ms debounce to batch rapid changes)
   useEffect(() => {
     if (!loaded) return
     setSaveStatus('saving')
@@ -136,8 +136,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveTimer.current = setTimeout(() => {
       saveState(state)
       setSaveStatus('saved')
-      setTimeout(() => setSaveStatus('idle'), 1500)
-    }, 800)
+      setTimeout(() => setSaveStatus('idle'), 1200)
+    }, 100)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [state, loaded])
 

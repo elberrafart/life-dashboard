@@ -8,9 +8,9 @@ const EMOJIS = ['🎯', '💰', '🏦', '📸', '⚡', '🏆', '🚀', '💪', '
 
 function generateTaskId() { return `t-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }
 
-function XPBadge({ xp }: { xp: 10 | 25 | 50 | 100 }) {
-  const color = xp === 10 ? 'var(--text3)' : xp === 25 ? 'var(--silver)' : xp === 50 ? 'var(--gold)' : 'var(--gold2)'
-  const glow = xp === 100 ? '0 0 8px var(--glow-gold)' : 'none'
+function XPBadge({ xp }: { xp: 10 | 25 | 50 | 100 | 500 | 1000 }) {
+  const color = xp === 10 ? 'var(--text3)' : xp === 25 ? 'var(--silver)' : xp === 50 ? 'var(--gold)' : xp >= 500 ? '#ff6b6b' : 'var(--gold2)'
+  const glow = xp >= 500 ? '0 0 10px rgba(255,107,107,0.6)' : xp === 100 ? '0 0 8px var(--glow-gold)' : 'none'
   return (
     <span style={{
       fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color,
@@ -53,7 +53,7 @@ export default function GoalModal({ goalId, onClose }: { goalId: string; onClose
   const [localCategory, setLocalCategory] = useState(goal?.category ?? '')
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [newTaskName, setNewTaskName] = useState('')
-  const [newTaskXP, setNewTaskXP] = useState<10 | 25 | 50 | 100>(25)
+  const [newTaskXP, setNewTaskXP] = useState<10 | 25 | 50 | 100 | 500 | 1000>(25)
   const [newTaskRepeatable, setNewTaskRepeatable] = useState(true)
 
   const todayKey = getTodayKey()
@@ -268,7 +268,7 @@ export default function GoalModal({ goalId, onClose }: { goalId: string; onClose
 
         <div style={{ display: 'flex', gap: 6, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1 }}>XP:</span>
-          {([10, 25, 50, 100] as const).map(xp => (
+          {([10, 25, 50, 100, 500] as const).map(xp => (
             <button
               key={xp}
               onClick={() => setNewTaskXP(xp)}
