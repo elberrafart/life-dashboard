@@ -1,6 +1,6 @@
 import { AppState } from './types'
 
-const STORAGE_KEY = 'life-dashboard-v4'
+const STORAGE_KEY = 'life-dashboard-v5'
 
 export const DEFAULT_STATE: AppState = {
   playerName: 'Player',
