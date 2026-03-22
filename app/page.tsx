@@ -1,65 +1,133 @@
-import Image from "next/image";
+'use client'
+import { useState, useEffect } from 'react'
+import Header from '@/components/Header'
+import TodayBar from '@/components/TodayBar'
+import VisionBoard from '@/components/VisionBoard'
+import GoalsGrid from '@/components/GoalsGrid'
+import HabitsTracker from '@/components/HabitsTracker'
+import KanbanBoard from '@/components/KanbanBoard'
+import XPFeed from '@/components/XPFeed'
+import BottomNav from '@/components/BottomNav'
+import MotivationalQuote from '@/components/MotivationalQuote'
+import SettingsPanel from '@/components/SettingsPanel'
+import LevelUpModal from '@/components/LevelUpModal'
+import FloatingXPLayer from '@/components/FloatingXPLayer'
+import DailyJournal from '@/components/DailyJournal'
 
-export default function Home() {
+export type Tab = 'vision' | 'goals' | 'habits' | 'board' | 'journal'
+
+function SectionHeading({ children }: { children: string }) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div style={{
+      fontFamily: 'var(--font-bebas)', fontSize: 13, letterSpacing: 4,
+      color: 'var(--text3)', textTransform: 'uppercase',
+      marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12,
+    }}>
+      {children}
+      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
     </div>
-  );
+  )
+}
+
+export default function Page() {
+  const [activeTab, setActiveTab] = useState<Tab>('goals')
+  const [feedOpen, setFeedOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 640)
+    check()
+    const mq = window.matchMedia('(min-width: 640px)')
+    mq.addEventListener('change', check)
+    return () => mq.removeEventListener('change', check)
+  }, [])
+
+  return (
+    <div style={{ background: 'var(--bg)', minHeight: '100dvh', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+      <FloatingXPLayer />
+      <LevelUpModal />
+
+      {/* Header */}
+      {isDesktop ? (
+        <Header onFeedOpen={() => setFeedOpen(true)} onSettingsOpen={() => setSettingsOpen(true)} />
+      ) : (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--border)',
+          background: 'rgba(10,10,8,0.97)',
+          position: 'sticky', top: 0, zIndex: 100,
+        }}>
+          <span style={{ fontFamily: 'var(--font-bebas)', fontSize: 24, letterSpacing: 3, color: 'var(--text)' }}>LIFE OS</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button onClick={() => setFeedOpen(true)} style={{ color: 'var(--text3)', fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', padding: 8, minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🔔</button>
+            <button onClick={() => setSettingsOpen(true)} style={{ color: 'var(--text3)', fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', padding: 8, minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⚙</button>
+          </div>
+        </div>
+      )}
+
+      <main style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <MotivationalQuote />
+        <TodayBar />
+
+        {isDesktop ? (
+          /* ── Desktop layout ── */
+          <>
+            <section style={{ padding: '32px 40px 0' }}>
+              <SectionHeading>Vision Board</SectionHeading>
+              <VisionBoard />
+            </section>
+            <section style={{ padding: '32px 40px 0' }}>
+              <SectionHeading>Goals</SectionHeading>
+              <GoalsGrid />
+            </section>
+            <section style={{ padding: '32px 40px 0' }}>
+              <SectionHeading>Kanban Board</SectionHeading>
+              <KanbanBoard />
+            </section>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, padding: '32px 40px 40px' }}>
+              <section>
+                <SectionHeading>Habits</SectionHeading>
+                <HabitsTracker />
+              </section>
+              <section>
+                <SectionHeading>Journal</SectionHeading>
+                <DailyJournal />
+              </section>
+            </div>
+          </>
+        ) : (
+          /* ── Mobile tab layout ── */
+          <div className="tab-content" key={activeTab} style={{ paddingBottom: 16 }}>
+            {activeTab === 'vision' && <div style={{ padding: '16px' }}><VisionBoard /></div>}
+            {activeTab === 'goals'  && <div style={{ padding: '16px' }}><GoalsGrid /></div>}
+            {activeTab === 'habits' && <div style={{ padding: '16px' }}><HabitsTracker /></div>}
+            {activeTab === 'board'  && <div style={{ padding: '8px' }}><KanbanBoard /></div>}
+            {activeTab === 'journal' && <div style={{ padding: '16px' }}><DailyJournal /></div>}
+          </div>
+        )}
+      </main>
+
+      {/* XP feed */}
+      {feedOpen && isDesktop && <XPFeed onClose={() => setFeedOpen(false)} />}
+      {feedOpen && !isDesktop && (
+        <>
+          <div onClick={() => setFeedOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.5)' }} />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 400,
+            height: '75dvh', background: 'var(--surface)',
+            border: '1px solid var(--border)', borderRadius: '20px 20px 0 0',
+          }} className="slide-up ios-scroll">
+            <XPFeed onClose={() => setFeedOpen(false)} embedded />
+          </div>
+        </>
+      )}
+
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+
+      {/* Mobile bottom nav */}
+      {!isDesktop && <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />}
+    </div>
+  )
 }
