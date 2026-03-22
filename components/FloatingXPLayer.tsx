@@ -14,7 +14,6 @@ export default function FloatingXPLayer() {
             left: item.x,
             top: item.y,
             fontFamily: 'var(--font-bebas)',
-            transform: 'translateX(-50%)',
           }}
         >
           +{item.xp} XP

@@ -111,11 +111,10 @@ export default function KanbanBoard() {
 
   return (
     <div
-      style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never, paddingBottom: 4 }}
       onTouchMove={touchDragId ? handleTouchMove : undefined}
       onTouchEnd={touchDragId ? handleTouchEnd : undefined}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(270px, 1fr))', gap: 12, minWidth: 600 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
         {COLUMNS.map(col => {
           const cards  = state.kanban.filter(k => k.column === col.id)
           const isOver = dropCol === col.id
