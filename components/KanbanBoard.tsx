@@ -156,15 +156,13 @@ export default function KanbanBoard() {
             data-col={col.id}
             style={{
               padding: '16px 14px',
-              borderTop: `3px solid ${col.color}`,
-              background: isOver ? 'var(--surface2)' : 'var(--surface)',
               border: `1px solid var(--border)`,
+              borderTop: `3px solid ${col.color}`,
               borderRadius: 12,
+              background: isOver ? 'var(--surface2)' : 'var(--surface)',
               transition: 'background 150ms',
-              display: 'flex', flexDirection: 'column', gap: 0,
-              overflowY: 'auto',
-              WebkitOverflowScrolling: 'touch' as never,
-              overscrollBehavior: 'contain',
+              display: 'flex', flexDirection: 'column',
+              minHeight: 200,
             }}
             onDragOver={e => handleDragOver(e, col.id)}
             onDrop={() => handleDrop(col.id)}

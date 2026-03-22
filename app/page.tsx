@@ -43,16 +43,16 @@ export default function Page() {
         <MotivationalQuote />
         <TodayBar />
 
+        {/* Kanban — first section, always visible */}
+        <section style={{ marginTop: 32 }}>
+          <SectionHeading>Kanban Board</SectionHeading>
+          <KanbanBoard />
+        </section>
+
         {/* Goals */}
         <section style={{ marginTop: 40 }}>
           <SectionHeading>Goals</SectionHeading>
           <GoalsGrid />
-        </section>
-
-        {/* Kanban — always visible, never hidden */}
-        <section style={{ marginTop: 40 }}>
-          <SectionHeading>Kanban Board</SectionHeading>
-          <KanbanBoard />
         </section>
 
         {/* Habits + Journal side by side on wide screens, stacked on mobile */}
