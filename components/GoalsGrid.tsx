@@ -8,9 +8,10 @@ import { getTodayKey } from '@/lib/store'
 function generateId() { return `g-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }
 
 export default function GoalsGrid() {
-  const { state, dispatch } = useApp()
+  const { state, dispatch, totalXP } = useApp()
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const [glowingGoal, setGlowingGoal] = useState<string | null>(null)
+  const playerLevel = getLevelInfo(totalXP)
 
   function handleAddGoal() {
     const newGoal: Goal = {
@@ -42,7 +43,6 @@ export default function GoalsGrid() {
         `}</style>
 
         {state.goals.map(goal => {
-          const levelInfo = getLevelInfo(goal.xp)
           const totalTasks = goal.tasks.length
           const completedTasks = goal.tasks.filter(t => state.checked[`${todayKey}_t_${t.id}`]).length
           const remainingTasks = totalTasks - completedTasks
@@ -68,7 +68,7 @@ export default function GoalsGrid() {
                 borderRadius: 4, padding: '1px 6px',
                 fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)',
               }}>
-                LVL {levelInfo.level}
+                LVL {playerLevel.level}
               </div>
 
               {/* Edit button */}
@@ -88,11 +88,11 @@ export default function GoalsGrid() {
 
               <div style={{ fontSize: 36, lineHeight: 1, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))', marginTop: 8 }}>{goal.emoji}</div>
               <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', lineHeight: 1.3 }}>{goal.name}</div>
-              <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1 }}>{levelInfo.emoji} {levelInfo.name}</div>
+              <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1 }}>{playerLevel.emoji} {playerLevel.name}</div>
 
-              {/* XP bar */}
+              {/* XP bar — global level progress */}
               <div style={{ width: '100%', height: 4, background: 'var(--surface2)', borderRadius: 99, overflow: 'hidden' }}>
-                <div className="xp-bar-fill" style={{ width: `${levelInfo.progress}%`, height: '100%', borderRadius: 99 }} />
+                <div className="xp-bar-fill" style={{ width: `${playerLevel.progress}%`, height: '100%', borderRadius: 99 }} />
               </div>
 
               <div style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1, textTransform: 'uppercase' }}>

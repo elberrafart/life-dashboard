@@ -44,7 +44,7 @@ function AnimatedCheckbox({ checked, onToggle }: { checked: boolean; onToggle: (
 }
 
 export default function GoalModal({ goalId, onClose }: { goalId: string; onClose: () => void }) {
-  const { state, dispatch, awardGoalXP } = useApp()
+  const { state, dispatch, awardGoalXP, totalXP } = useApp()
   const goal = state.goals.find(g => g.id === goalId)
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -60,7 +60,7 @@ export default function GoalModal({ goalId, onClose }: { goalId: string; onClose
 
   if (!goal) return null
 
-  const levelInfo = getLevelInfo(goal.xp)
+  const levelInfo = getLevelInfo(totalXP)
 
   function handleSaveHeader() {
     dispatch({ type: 'UPDATE_GOAL', payload: { ...goal!, emoji: localEmoji, name: localName, category: localCategory } })
@@ -185,7 +185,7 @@ export default function GoalModal({ goalId, onClose }: { goalId: string; onClose
           </div>
         </div>
 
-        {/* XP Progress */}
+        {/* XP Progress — global player rank */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 7 }}>
             <span>{levelInfo.emoji} {levelInfo.name} — Level {levelInfo.level}</span>
@@ -194,8 +194,9 @@ export default function GoalModal({ goalId, onClose }: { goalId: string; onClose
           <div style={{ height: 6, background: 'var(--surface2)', borderRadius: 99, overflow: 'hidden', marginBottom: 4 }}>
             <div className="xp-bar-fill" style={{ width: `${levelInfo.progress}%`, height: '100%', borderRadius: 99 }} />
           </div>
-          <div style={{ fontSize: 10, color: 'var(--text3)', textAlign: 'right' }}>
-            {goal.xp.toLocaleString()} XP {levelInfo.maxXp !== Infinity ? `/ ${(levelInfo.minXp + levelInfo.xpToNext).toLocaleString()} XP to Level ${levelInfo.level + 1}` : '— MAX LEVEL'}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text3)' }}>
+            <span>This goal: {goal.xp.toLocaleString()} XP</span>
+            <span>{totalXP.toLocaleString()} / {levelInfo.maxXp !== Infinity ? `${(levelInfo.minXp + levelInfo.xpToNext).toLocaleString()} XP to Lvl ${levelInfo.level + 1}` : 'MAX LEVEL'}</span>
           </div>
         </div>
 
