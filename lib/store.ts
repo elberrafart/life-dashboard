@@ -4,6 +4,10 @@ const STORAGE_KEY = 'life-dashboard-v5'
 
 export const DEFAULT_STATE: AppState = {
   playerName: 'Player',
+  firstName: '',
+  lastName: '',
+  profileYear: '',
+  tagline: '',
   goals: [
     {
       id: 'g1',

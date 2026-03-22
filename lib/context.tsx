@@ -17,6 +17,7 @@ export type FloatingXPItem = { id: string; xp: number; x: number; y: number }
 type Action =
   | { type: 'SET_STATE'; payload: AppState }
   | { type: 'SET_PLAYER_NAME'; payload: string }
+  | { type: 'SET_PROFILE'; payload: { firstName: string; lastName: string; profileYear: string; tagline: string } }
   | { type: 'ADD_GOAL'; payload: Goal }
   | { type: 'UPDATE_GOAL'; payload: Goal }
   | { type: 'DELETE_GOAL'; payload: string }
@@ -51,6 +52,11 @@ function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'SET_STATE': return { ...action.payload }
     case 'SET_PLAYER_NAME': return { ...state, playerName: action.payload }
+    case 'SET_PROFILE': {
+      const { firstName, lastName, profileYear, tagline } = action.payload
+      const playerName = [firstName, lastName].filter(Boolean).join(' ') || state.playerName
+      return { ...state, firstName, lastName, profileYear, tagline, playerName }
+    }
     case 'ADD_GOAL': return { ...state, goals: [...state.goals, action.payload] }
     case 'UPDATE_GOAL': return { ...state, goals: state.goals.map(g => g.id === action.payload.id ? action.payload : g) }
     case 'DELETE_GOAL': return { ...state, goals: state.goals.filter(g => g.id !== action.payload) }
@@ -101,6 +107,10 @@ function reducer(state: AppState, action: Action): AppState {
 
 const PLACEHOLDER_STATE: AppState = {
   playerName: '',
+  firstName: '',
+  lastName: '',
+  profileYear: '',
+  tagline: '',
   goals: [],
   habits: [],
   checked: {},

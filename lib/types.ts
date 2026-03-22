@@ -43,6 +43,10 @@ export type XPEvent = {
 
 export type AppState = {
   playerName: string
+  firstName: string
+  lastName: string
+  profileYear: string
+  tagline: string
   goals: Goal[]
   habits: Habit[]
   checked: Record<string, boolean>

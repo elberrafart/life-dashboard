@@ -12,6 +12,7 @@ import SettingsPanel from '@/components/SettingsPanel'
 import LevelUpModal from '@/components/LevelUpModal'
 import FloatingXPLayer from '@/components/FloatingXPLayer'
 import DailyJournal from '@/components/DailyJournal'
+import ProfileCard from '@/components/ProfileCard'
 
 export type Tab = 'vision' | 'goals' | 'habits' | 'board' | 'journal'
 
@@ -40,6 +41,7 @@ export default function Page() {
       <Header onFeedOpen={() => setFeedOpen(true)} onSettingsOpen={() => setSettingsOpen(true)} />
 
       <main style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 'max(env(safe-area-inset-bottom), 40px)' }}>
+        <ProfileCard />
         <MotivationalQuote />
 
         <div style={{ padding: '0 20px' }}>
