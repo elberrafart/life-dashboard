@@ -11,7 +11,7 @@ export default function GoalsGrid() {
   const { state, dispatch, totalXP } = useApp()
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const [glowingGoal, setGlowingGoal] = useState<string | null>(null)
-  const playerLevel = getLevelInfo(totalXP)
+  const playerLevel = getLevelInfo(totalXP, state.streak ?? 0)
 
   function handleAddGoal() {
     const newGoal: Goal = {

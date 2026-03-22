@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useApp } from '@/lib/context'
-import { Task, getLevelInfo } from '@/lib/types'
+import { Task, getLevelInfo, IMMORTAL_XP_THRESHOLD, IMMORTAL_STREAK_DAYS } from '@/lib/types'
 import { getTodayKey } from '@/lib/store'
 
 const EMOJIS = ['🎯', '💰', '🏦', '📸', '⚡', '🏆', '🚀', '💪', '🧠', '✈️', '🏡', '🚗', '⌚', '🏍️', '🏙️', '📖', '🎸', '🎨', '💻', '🌍', '❤️', '🔥', '⭐', '🌱', '🏋️', '🎓', '💎', '🛡️', '⚔️', '📚', '🔬', '🎵', '🌊', '🏄', '🤸', '🧘', '💡', '🏆', '🎮', '🍎']
@@ -60,7 +60,7 @@ export default function GoalModal({ goalId, onClose }: { goalId: string; onClose
 
   if (!goal) return null
 
-  const levelInfo = getLevelInfo(totalXP)
+  const levelInfo = getLevelInfo(totalXP, state.streak ?? 0)
 
   function handleSaveHeader() {
     dispatch({ type: 'UPDATE_GOAL', payload: { ...goal!, emoji: localEmoji, name: localName, category: localCategory } })
@@ -198,6 +198,12 @@ export default function GoalModal({ goalId, onClose }: { goalId: string; onClose
             <span>This goal: {goal.xp.toLocaleString()} XP</span>
             <span>{totalXP.toLocaleString()} / {levelInfo.maxXp !== Infinity ? `${(levelInfo.minXp + levelInfo.xpToNext).toLocaleString()} XP to Lvl ${levelInfo.level + 1}` : 'MAX LEVEL'}</span>
           </div>
+          {/* Immortal hint — show when XP qualifies but streak doesn't */}
+          {totalXP >= IMMORTAL_XP_THRESHOLD && (state.streak ?? 0) < IMMORTAL_STREAK_DAYS && (
+            <div style={{ marginTop: 8, fontSize: 10, color: 'var(--gold)', letterSpacing: 0.5, textAlign: 'center' }}>
+              🐐 Immortal unlocks at a {IMMORTAL_STREAK_DAYS}-day streak — you&apos;re at {state.streak ?? 0} days
+            </div>
+          )}
         </div>
 
         {/* Tasks */}

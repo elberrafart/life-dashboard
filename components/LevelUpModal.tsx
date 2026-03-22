@@ -1,25 +1,29 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useApp } from '@/lib/context'
-import { getLevelInfo, LEVELS } from '@/lib/types'
+import { getLevelInfo, LEVELS, IMMORTAL_LEVEL } from '@/lib/types'
 import { generateConfettiParticles } from '@/lib/animations'
 
+const ALL_LEVELS = [...LEVELS, IMMORTAL_LEVEL]
+
 export default function LevelUpModal() {
-  const { totalXP } = useApp()
+  const { totalXP, state } = useApp()
+  const streak = state.streak ?? 0
   const prevXP = useRef(-1)
+  const prevStreak = useRef(-1)
   const [levelUp, setLevelUp] = useState<{ oldLevel: number; newLevel: number } | null>(null)
   const [confetti] = useState(() => generateConfettiParticles(50))
   const [phase, setPhase] = useState<'flash' | 'modal' | 'done'>('done')
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => {
-    // Skip on very first render (prevXP still -1)
     if (prevXP.current === -1) {
       prevXP.current = totalXP
+      prevStreak.current = streak
       return
     }
-    const prevLevel = getLevelInfo(prevXP.current).level
-    const newLevel = getLevelInfo(totalXP).level
+    const prevLevel = getLevelInfo(prevXP.current, prevStreak.current).level
+    const newLevel  = getLevelInfo(totalXP, streak).level
     if (newLevel > prevLevel) {
       timers.current.forEach(clearTimeout)
       setLevelUp({ oldLevel: prevLevel, newLevel })
@@ -30,13 +34,14 @@ export default function LevelUpModal() {
       ]
     }
     prevXP.current = totalXP
+    prevStreak.current = streak
     return () => timers.current.forEach(clearTimeout)
-  }, [totalXP])
+  }, [totalXP, streak])
 
   if (phase === 'done' || !levelUp) return null
 
-  const oldInfo = LEVELS[levelUp.oldLevel - 1]
-  const newInfo = LEVELS[levelUp.newLevel - 1]
+  const oldInfo = ALL_LEVELS[levelUp.oldLevel - 1]
+  const newInfo = ALL_LEVELS[levelUp.newLevel - 1]
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, pointerEvents: phase === 'modal' ? 'auto' : 'none' }}>

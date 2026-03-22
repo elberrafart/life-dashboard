@@ -7,7 +7,7 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
   const { state, dispatch, totalXP, saveStatus } = useApp()
   const [editingName, setEditingName] = useState(false)
   const [nameVal, setNameVal] = useState(state.playerName)
-  const levelInfo = getLevelInfo(totalXP)
+  const levelInfo = getLevelInfo(totalXP, state.streak ?? 0)
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
 
