@@ -12,7 +12,6 @@ import SettingsPanel from '@/components/SettingsPanel'
 import LevelUpModal from '@/components/LevelUpModal'
 import FloatingXPLayer from '@/components/FloatingXPLayer'
 import DailyJournal from '@/components/DailyJournal'
-import MouseEffects from '@/components/MouseEffects'
 
 export type Tab = 'vision' | 'goals' | 'habits' | 'board' | 'journal'
 
@@ -35,7 +34,6 @@ export default function Page() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100dvh' }}>
-      <MouseEffects />
       <FloatingXPLayer />
       <LevelUpModal />
 
