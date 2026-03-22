@@ -15,7 +15,7 @@ export default function TodayBar() {
   const streakDays = state.streak || 0
 
   return (
-    <div style={{ padding: '16px 40px 0' }} className="sm:px-10 px-4">
+    <div style={{ paddingTop: 16 }}>
       <div className="card" style={{ padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
         {/* Date */}
         <div style={{ flexShrink: 0 }}>

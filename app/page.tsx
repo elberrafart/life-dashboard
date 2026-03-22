@@ -39,36 +39,41 @@ export default function Page() {
 
       <Header onFeedOpen={() => setFeedOpen(true)} onSettingsOpen={() => setSettingsOpen(true)} />
 
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 60px' }}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 'max(env(safe-area-inset-bottom), 40px)' }}>
         <MotivationalQuote />
-        <TodayBar />
 
-        {/* Kanban — first section, always visible */}
-        <section style={{ marginTop: 32 }}>
+        <div style={{ padding: '0 20px' }}>
+          <TodayBar />
+        </div>
+
+        {/* Kanban — edge-to-edge scroll on mobile */}
+        <section style={{ marginTop: 32, padding: '0 20px' }}>
           <SectionHeading>Kanban Board</SectionHeading>
-          <KanbanBoard />
         </section>
+        <div style={{ padding: '0 20px' }}>
+          <KanbanBoard />
+        </div>
 
         {/* Goals */}
-        <section style={{ marginTop: 40 }}>
+        <section style={{ marginTop: 40, padding: '0 20px' }}>
           <SectionHeading>Goals</SectionHeading>
           <GoalsGrid />
         </section>
 
-        {/* Habits + Journal side by side on wide screens, stacked on mobile */}
-        <div style={{ marginTop: 40, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-          <section style={{ flex: '1 1 300px', minWidth: 0 }}>
+        {/* Habits + Journal */}
+        <div style={{ marginTop: 40, padding: '0 20px', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          <section style={{ flex: '1 1 280px', minWidth: 0 }}>
             <SectionHeading>Habits</SectionHeading>
             <HabitsTracker />
           </section>
-          <section style={{ flex: '1 1 300px', minWidth: 0 }}>
+          <section style={{ flex: '1 1 280px', minWidth: 0 }}>
             <SectionHeading>Journal</SectionHeading>
             <DailyJournal />
           </section>
         </div>
 
         {/* Vision Board */}
-        <section style={{ marginTop: 40 }}>
+        <section style={{ marginTop: 40, padding: '0 20px' }}>
           <SectionHeading>Vision Board</SectionHeading>
           <VisionBoard />
         </section>
