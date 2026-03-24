@@ -79,6 +79,12 @@ export default function Page() {
         <ProfileCard />
         <MotivationalQuote />
 
+        {/* Vision Board */}
+        <section style={{ marginTop: 40, padding: '0 20px' }}>
+          <SectionHeading>Vision Board</SectionHeading>
+          <VisionBoard />
+        </section>
+
         <div style={{ padding: '0 20px' }}>
           <TodayBar />
         </div>
@@ -109,11 +115,6 @@ export default function Page() {
           </section>
         </div>
 
-        {/* Vision Board */}
-        <section style={{ marginTop: 40, padding: '0 20px' }}>
-          <SectionHeading>Vision Board</SectionHeading>
-          <VisionBoard />
-        </section>
       </main>
 
       {/* XP feed drawer */}
