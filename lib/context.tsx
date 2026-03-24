@@ -32,6 +32,9 @@ type Action =
   | { type: 'SET_VISION'; payload: { quoteText: string; quoteSub: string } }
   | { type: 'AWARD_GOAL_XP'; payload: { goalId: string; xp: number; event: XPEvent } }
   | { type: 'AWARD_HABIT_XP'; payload: { xp: number; event: XPEvent } }
+  | { type: 'REMOVE_GOAL_XP'; payload: { goalId: string; xp: number } }
+  | { type: 'REMOVE_HABIT_XP'; payload: { xp: number } }
+  | { type: 'RESET_XP' }
   | { type: 'SAVE_JOURNAL'; payload: { date: string; text: string } }
 
 type AppContextType = {
@@ -43,6 +46,8 @@ type AppContextType = {
   floatingXPs: FloatingXPItem[]
   awardGoalXP: (goalId: string, xp: number, emoji: string, description: string, x?: number, y?: number) => void
   awardHabitXP: (habitId: string, xp: number, label: string, x?: number, y?: number) => void
+  removeGoalXP: (goalId: string, xp: number) => void
+  removeHabitXP: (xp: number) => void
   triggerFloatingXP: (xp: number, x: number, y: number) => void
 }
 
@@ -92,6 +97,29 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         habitXP: (state.habitXP ?? 0) + xp,
         xpFeed: [event, ...state.xpFeed].slice(0, 100),
+      }
+    }
+    case 'REMOVE_GOAL_XP': {
+      const { goalId, xp } = action.payload
+      return {
+        ...state,
+        goals: state.goals.map(g => g.id === goalId ? { ...g, xp: Math.max(0, g.xp - xp) } : g),
+      }
+    }
+    case 'REMOVE_HABIT_XP': {
+      return {
+        ...state,
+        habitXP: Math.max(0, (state.habitXP ?? 0) - action.payload.xp),
+      }
+    }
+    case 'RESET_XP': {
+      return {
+        ...state,
+        goals: state.goals.map(g => ({ ...g, xp: 0 })),
+        habitXP: 0,
+        checked: {},
+        xpFeed: [],
+        kanban: state.kanban.map(k => ({ ...k, xpAwarded: false })),
       }
     }
     case 'SAVE_JOURNAL': {
@@ -222,6 +250,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (x !== undefined && y !== undefined) triggerFloatingXP(xp, x, y)
   }, [triggerFloatingXP])
 
+  const removeGoalXP = useCallback((goalId: string, xp: number) => {
+    dispatch({ type: 'REMOVE_GOAL_XP', payload: { goalId, xp } })
+  }, [])
+
+  const removeHabitXP = useCallback((xp: number) => {
+    dispatch({ type: 'REMOVE_HABIT_XP', payload: { xp } })
+  }, [])
+
   if (!loaded) return null
 
   return (
@@ -234,6 +270,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       floatingXPs,
       awardGoalXP,
       awardHabitXP,
+      removeGoalXP,
+      removeHabitXP,
       triggerFloatingXP,
     }}>
       {children}

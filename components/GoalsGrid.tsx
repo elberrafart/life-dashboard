@@ -8,7 +8,7 @@ import { getTodayKey } from '@/lib/store'
 function generateId() { return `g-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }
 
 export default function GoalsGrid() {
-  const { state, dispatch, totalXP, awardGoalXP } = useApp()
+  const { state, dispatch, totalXP, awardGoalXP, removeGoalXP } = useApp()
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const playerLevel = getLevelInfo(totalXP, state.streak ?? 0)
   const todayKey = getTodayKey()
@@ -33,6 +33,8 @@ export default function GoalsGrid() {
     if (!wasChecked) {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
       awardGoalXP(goal.id, task.xp, goal.emoji, `Completed: ${task.name}`, rect.left + rect.width / 2, rect.top)
+    } else {
+      removeGoalXP(goal.id, task.xp)
     }
   }
 

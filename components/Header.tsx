@@ -77,6 +77,18 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <div style={{ fontSize: 11, letterSpacing: 1, color: 'var(--text3)', textTransform: 'uppercase' }}>{today}</div>
         <button
+          onClick={() => { if (window.confirm('Reset all XP to 0 and uncheck everything?')) dispatch({ type: 'RESET_XP' }) }}
+          style={{
+            background: 'none', border: '1px solid var(--border)', borderRadius: 6,
+            color: 'var(--text3)', padding: '6px 12px', fontSize: 10, letterSpacing: 1,
+            textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-dm)',
+            transition: 'all 150ms',
+          }}
+          onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--red)'; e.currentTarget.style.color = 'var(--red)' }}
+          onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
+          title="Reset all XP and checkboxes (for testing)"
+        >↺ Reset</button>
+        <button
           onClick={onFeedOpen}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, padding: 8, borderRadius: 8, transition: 'color 150ms' }}
           title="XP Feed"

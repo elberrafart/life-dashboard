@@ -20,7 +20,7 @@ const PRIORITY_COLOR: Record<string, string> = {
 const DONE_XP = 50
 
 export default function KanbanBoard() {
-  const { state, dispatch, awardGoalXP, awardHabitXP } = useApp()
+  const { state, dispatch, awardGoalXP, awardHabitXP, removeGoalXP, removeHabitXP } = useApp()
 
   const [dragId,     setDragId]     = useState<string | null>(null)
   const [dropCol,    setDropCol]    = useState<string | null>(null)
@@ -38,7 +38,12 @@ export default function KanbanBoard() {
   function moveCard(card: KanbanCard, col: 'todo'|'inprogress'|'done', x?: number, y?: number) {
     if (card.column === col) return
     const movingToDone = col === 'done' && !card.xpAwarded
-    dispatch({ type: 'UPDATE_KANBAN', payload: { ...card, column: col, xpAwarded: movingToDone ? true : card.xpAwarded } })
+    const movingFromDone = card.column === 'done' && col !== 'done' && !!card.xpAwarded
+    dispatch({ type: 'UPDATE_KANBAN', payload: {
+      ...card,
+      column: col,
+      xpAwarded: movingToDone ? true : movingFromDone ? false : card.xpAwarded,
+    }})
     if (movingToDone) {
       const cx = x ?? window.innerWidth / 2
       const cy = y ?? window.innerHeight / 2
@@ -46,6 +51,12 @@ export default function KanbanBoard() {
         awardGoalXP(card.linkedGoalId, DONE_XP, '✅', `Completed: ${card.name}`, cx, cy)
       } else {
         awardHabitXP('kanban', DONE_XP, `Done: ${card.name}`, cx, cy)
+      }
+    } else if (movingFromDone) {
+      if (card.linkedGoalId && state.goals.find(g => g.id === card.linkedGoalId)) {
+        removeGoalXP(card.linkedGoalId, DONE_XP)
+      } else {
+        removeHabitXP(DONE_XP)
       }
     }
   }

@@ -28,7 +28,7 @@ function AnimatedCheckbox({ checked, onToggle }: { checked: boolean; onToggle: (
 }
 
 export default function HabitsTracker() {
-  const { state, dispatch, awardHabitXP } = useApp()
+  const { state, dispatch, awardHabitXP, removeHabitXP } = useApp()
   const [editMode, setEditMode] = useState(false)
   const [newLabel, setNewLabel] = useState('')
   const [newXP, setNewXP] = useState(25)
@@ -44,6 +44,8 @@ export default function HabitsTracker() {
       const x = rect.left + rect.width / 2
       const y = rect.top
       awardHabitXP(habit.id, habit.xp, habit.label, x, y)
+    } else {
+      removeHabitXP(habit.xp)
     }
   }
 
