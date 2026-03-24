@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useApp } from '@/lib/context'
 import Header from '@/components/Header'
 import TodayBar from '@/components/TodayBar'
 import VisionBoard from '@/components/VisionBoard'
@@ -29,6 +30,39 @@ function SectionHeading({ children }: { children: string }) {
   )
 }
 
+function ResetButton() {
+  const { dispatch } = useApp()
+  const [confirm, setConfirm] = useState(false)
+
+  function handleReset() {
+    if (!confirm) { setConfirm(true); setTimeout(() => setConfirm(false), 3000); return }
+    dispatch({ type: 'RESET_XP' })
+    setConfirm(false)
+  }
+
+  return (
+    <div style={{ padding: '12px 20px 0', display: 'flex', justifyContent: 'flex-end' }}>
+      <button
+        onClick={handleReset}
+        style={{
+          background: confirm ? 'rgba(220,53,69,0.15)' : 'transparent',
+          border: `1px solid ${confirm ? 'var(--red)' : 'var(--border2)'}`,
+          borderRadius: 8,
+          color: confirm ? 'var(--red)' : 'var(--text3)',
+          padding: '8px 18px',
+          fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase',
+          cursor: 'pointer', fontFamily: 'var(--font-dm)',
+          transition: 'all 200ms',
+          display: 'flex', alignItems: 'center', gap: 7,
+        }}
+      >
+        <span style={{ fontSize: 14 }}>↺</span>
+        {confirm ? 'Click again to confirm' : 'Reset XP & Checkboxes'}
+      </button>
+    </div>
+  )
+}
+
 export default function Page() {
   const [feedOpen, setFeedOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -41,6 +75,7 @@ export default function Page() {
       <Header onFeedOpen={() => setFeedOpen(true)} onSettingsOpen={() => setSettingsOpen(true)} />
 
       <main style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 'max(env(safe-area-inset-bottom), 40px)' }}>
+        <ResetButton />
         <ProfileCard />
         <MotivationalQuote />
 
