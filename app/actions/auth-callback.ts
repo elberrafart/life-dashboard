@@ -29,15 +29,21 @@ export async function exchangeCode(code: string): Promise<{ error?: string }> {
   }
 }
 
+const ALLOWED_OTP_TYPES = ['invite', 'magiclink', 'recovery', 'email'] as const
+type OtpType = typeof ALLOWED_OTP_TYPES[number]
+
 export async function verifyOtp(
   tokenHash: string,
   type: string,
 ): Promise<{ error?: string }> {
   try {
+    if (!ALLOWED_OTP_TYPES.includes(type as OtpType)) {
+      return { error: 'Invalid token type.' }
+    }
     const supabase = await createClient()
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
-      type: type as 'invite' | 'magiclink' | 'recovery' | 'email',
+      type: type as OtpType,
     })
     if (error) return { error: error.message }
     return {}

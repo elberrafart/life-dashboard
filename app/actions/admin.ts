@@ -1,7 +1,6 @@
 'use server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { getSessionUser } from '@/lib/supabase-server'
-import { headers } from 'next/headers'
 
 const SUPER_ADMIN_EMAIL = process.env.ADMIN_EMAIL
 
@@ -21,11 +20,9 @@ async function assertAdmin() {
   if (!data) throw new Error('Unauthorized')
 }
 
-async function getSiteUrl() {
-  const h = await headers()
-  const host = h.get('host') ?? 'localhost:3000'
-  const proto = h.get('x-forwarded-proto') ?? 'http'
-  return `${proto}://${host}`
+function getSiteUrl() {
+  // Use explicit env var — never trust request headers for security-sensitive redirects
+  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
 }
 
 export async function checkIsAdmin(): Promise<boolean> {
@@ -65,10 +62,14 @@ export async function listUsers() {
 
 export async function inviteUser(email: string): Promise<{ error?: string }> {
   try {
+    const trimmed = email.trim().toLowerCase()
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) || trimmed.length > 254) {
+      return { error: 'Please enter a valid email address.' }
+    }
     await assertAdmin()
     const supabase = createAdminClient()
-    const siteUrl = await getSiteUrl()
-    const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+    const siteUrl = getSiteUrl()
+    const { error } = await supabase.auth.admin.inviteUserByEmail(trimmed, {
       redirectTo: `${siteUrl}/auth/callback`,
     })
     if (error) return { error: error.message }
@@ -82,7 +83,7 @@ export async function sendPasswordReset(email: string): Promise<{ error?: string
   try {
     await assertAdmin()
     const supabase = createAdminClient()
-    const siteUrl = await getSiteUrl()
+    const siteUrl = getSiteUrl()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${siteUrl}/auth/callback`,
     })

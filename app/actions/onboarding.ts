@@ -32,6 +32,10 @@ export async function saveOnboarding(
   const tagline = (formData.get('tagline') as string)?.trim()
 
   if (!firstName) return { error: 'First name is required.' }
+  if (firstName.length > 50) return { error: 'First name must be 50 characters or less.' }
+  if (lastName && lastName.length > 50) return { error: 'Last name must be 50 characters or less.' }
+  if (profileYear && profileYear.length > 50) return { error: 'Year/Cohort must be 50 characters or less.' }
+  if (tagline && tagline.length > 100) return { error: 'Tagline must be 100 characters or less.' }
 
   const supabase = createAdminClient()
   const displayName = [firstName, lastName].filter(Boolean).join(' ')
