@@ -11,6 +11,7 @@ import React, {
 } from 'react'
 import { AppState, Goal, Habit, KanbanCard, XPEvent, getLevelInfo } from './types'
 import { loadState, saveState, getTodayKey } from './store'
+import { syncProfile } from '@/app/actions/profiles'
 
 export type FloatingXPItem = { id: string; xp: number; x: number; y: number }
 
@@ -185,6 +186,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       saveState(state)
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 1200)
+      // Sync key metrics to Supabase for coach visibility
+      const totalXP = state.goals.reduce((s, g) => s + g.xp, 0) + (state.habitXP ?? 0)
+      syncProfile({
+        displayName: state.playerName,
+        xpTotal: totalXP,
+        streak: state.streak ?? 0,
+        goals: state.goals.map(g => ({ id: g.id, name: g.name, emoji: g.emoji, category: g.category, xp: g.xp, taskCount: g.tasks.length })),
+        habits: state.habits.map(h => ({ id: h.id, label: h.label })),
+        journalDates: Object.keys(state.journalEntries ?? {}).filter(d => state.journalEntries[d]),
+        kanbanDone: state.kanban.filter(k => k.column === 'done').length,
+      }).catch(() => {/* silently ignore sync failures */})
     }, 100)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [state, loaded])

@@ -115,6 +115,24 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
         >⚙</button>
         {isAdmin && (
           <a
+            href="/admin/clients"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '8px 14px', cursor: 'pointer',
+              color: 'var(--silver2)', fontSize: 11, fontWeight: 600,
+              letterSpacing: 1.5, textTransform: 'uppercase',
+              transition: 'all 150ms', fontFamily: 'var(--font-dm)',
+              textDecoration: 'none',
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}
+          >
+            👥 Clients
+          </a>
+        )}
+        {isAdmin && (
+          <a
             href="/admin"
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
