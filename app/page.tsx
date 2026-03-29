@@ -68,7 +68,7 @@ export default function Page() {
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100dvh' }}>
+    <div style={{ minHeight: '100dvh' }}>
       <FloatingXPLayer />
       <LevelUpModal />
 

@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0a0a08;
-  --surface: #111110;
-  --surface2: #181816;
-  --surface3: #1f1f1c;
-  --border: #252522;
-  --border2: #2e2e2b;
-  --text: #ede9e0;
+  --bg: #060605;
+  --surface: #171714;
+  --surface2: #1f1f1c;
+  --surface3: #272724;
+  --border: #2c2c29;
+  --border2: #3a3a36;
+  --text: #f0ece0;
   --text2: #8a8680;
-  --text3: #424240;
+  --text3: #525250;
   --silver: #b8b4ae;
   --silver2: #7a7672;
   --accent: #d4cfc6;
@@ -62,9 +62,26 @@ body {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-top-color: var(--border2);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.75),
+    0 2px 8px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.07),
+    inset 0 0 0 0 transparent;
   transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  position: relative;
+}
+
+/* Tactical gold accent line on top edge of every card */
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 20px; right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.35) 40%, rgba(201,168,76,0.35) 60%, transparent);
+  border-radius: 0 0 2px 2px;
+  pointer-events: none;
 }
 
 .card-interactive:hover {
@@ -252,3 +269,62 @@ select option { background: var(--surface2); color: var(--text); }
 
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 .pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* ── Background fog ──────────────────────────────────── */
+.fog-blob {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+/* Dark military olive — top left */
+.fog-blob-1 {
+  width: 80vmax; height: 80vmax;
+  top: -25%; left: -20%;
+  background: radial-gradient(circle, rgba(28, 52, 16, 0.65) 0%, transparent 68%);
+  animation: fogDrift1 38s ease-in-out infinite;
+}
+
+/* Dark gunpowder amber — right side */
+.fog-blob-2 {
+  width: 65vmax; height: 65vmax;
+  top: 10%; right: -25%;
+  background: radial-gradient(circle, rgba(62, 36, 8, 0.55) 0%, transparent 65%);
+  animation: fogDrift2 45s ease-in-out infinite;
+}
+
+/* Dark smoke teal — bottom */
+.fog-blob-3 {
+  width: 90vmax; height: 90vmax;
+  bottom: -40%; left: 10%;
+  background: radial-gradient(circle, rgba(12, 26, 38, 0.6) 0%, transparent 65%);
+  animation: fogDrift3 52s ease-in-out infinite;
+}
+
+/* Dark charcoal — center drift */
+.fog-blob-4 {
+  width: 55vmax; height: 55vmax;
+  top: 40%; left: 25%;
+  background: radial-gradient(circle, rgba(40, 22, 8, 0.4) 0%, transparent 70%);
+  animation: fogDrift4 34s ease-in-out infinite;
+}
+
+@keyframes fogDrift1 {
+  0%,100% { transform: translate3d(0,    0,   0) scale(1); }
+  33%      { transform: translate3d(7vw, -6vh, 0) scale(1.07); }
+  66%      { transform: translate3d(-4vw, 9vh, 0) scale(0.95); }
+}
+@keyframes fogDrift2 {
+  0%,100% { transform: translate3d(0,    0,   0) scale(1); }
+  40%      { transform: translate3d(-9vw, 7vh, 0) scale(1.1); }
+  70%      { transform: translate3d(4vw, -5vh, 0) scale(0.92); }
+}
+@keyframes fogDrift3 {
+  0%,100% { transform: translate3d(0,    0,   0) scale(1); }
+  50%      { transform: translate3d(8vw,  6vh, 0) scale(1.06); }
+}
+@keyframes fogDrift4 {
+  0%,100% { transform: translate3d(0,     0,    0) scale(1); }
+  35%      { transform: translate3d(-7vw, -9vh, 0) scale(0.94); }
+  70%      { transform: translate3d(9vw,   5vh, 0) scale(1.08); }
+}

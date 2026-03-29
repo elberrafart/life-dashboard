@@ -58,6 +58,7 @@ export type AppState = {
   lastCheckedDate: string
   habitXP: number
   journalEntries: Record<string, string>
+  moodLog: Record<string, string>
 }
 
 export type Level = {

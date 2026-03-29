@@ -36,6 +36,7 @@ type Action =
   | { type: 'REMOVE_HABIT_XP'; payload: { xp: number } }
   | { type: 'RESET_XP' }
   | { type: 'SAVE_JOURNAL'; payload: { date: string; text: string } }
+  | { type: 'SAVE_MOOD'; payload: { date: string; mood: string } }
 
 type AppContextType = {
   state: AppState
@@ -129,6 +130,14 @@ function reducer(state: AppState, action: Action): AppState {
         journalEntries: { ...(state.journalEntries ?? {}), [date]: text },
       }
     }
+    case 'SAVE_MOOD': {
+      const { date, mood } = action.payload
+      const current = state.moodLog?.[date]
+      return {
+        ...state,
+        moodLog: { ...(state.moodLog ?? {}), [date]: current === mood ? '' : mood },
+      }
+    }
     default: return state
   }
 }
@@ -150,6 +159,7 @@ const PLACEHOLDER_STATE: AppState = {
   lastCheckedDate: '',
   habitXP: 0,
   journalEntries: {},
+  moodLog: {},
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, DM_Sans } from 'next/font/google'
 import './globals.css'
 import { AppProvider } from '@/lib/context'
+import BackgroundFog from '@/components/BackgroundFog'
 
 const bebasNeue = Bebas_Neue({
   weight: '400',
@@ -40,9 +41,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${bebasNeue.variable} ${dmSans.variable}`}>
       <body style={{ fontFamily: 'var(--font-dm), sans-serif' }}>
-        <AppProvider>
-          {children}
-        </AppProvider>
+        <BackgroundFog />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <AppProvider>
+            {children}
+          </AppProvider>
+        </div>
       </body>
     </html>
   )

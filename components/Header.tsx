@@ -1,85 +1,9 @@
 'use client'
 import { useState } from 'react'
 import { useApp } from '@/lib/context'
-import { getLevelInfo, LEVELS, IMMORTAL_LEVEL, IMMORTAL_XP_THRESHOLD, IMMORTAL_STREAK_DAYS } from '@/lib/types'
-
-function RanksModal({ onClose, currentLevel }: { onClose: () => void; currentLevel: number }) {
-  const allRanks = [...LEVELS, IMMORTAL_LEVEL]
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 20,
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 16, padding: '28px 32px', maxWidth: 480, width: '100%',
-          maxHeight: '80vh', overflowY: 'auto',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 22, letterSpacing: 3, color: 'var(--text)' }}>
-            RANKING SYSTEM
-          </div>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
-          >×</button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {allRanks.map((rank) => {
-            const isCurrent = rank.level === currentLevel
-            const isImmortal = rank.level === 11
-            return (
-              <div
-                key={rank.level}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '12px 16px', borderRadius: 10,
-                  background: isCurrent ? 'rgba(201,168,76,0.12)' : 'var(--surface2)',
-                  border: `1px solid ${isCurrent ? 'var(--gold)' : 'var(--border)'}`,
-                  transition: 'all 150ms',
-                }}
-              >
-                <div style={{ fontSize: 24, lineHeight: 1, flexShrink: 0 }}>{rank.emoji}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                    <span style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: isCurrent ? 'var(--gold)' : 'var(--silver)', fontWeight: 600 }}>
-                      Lvl {rank.level} — {rank.name}
-                    </span>
-                    {isCurrent && (
-                      <span style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--gold)', background: 'rgba(201,168,76,0.15)', borderRadius: 4, padding: '2px 6px' }}>
-                        You are here
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3 }}>
-                    {isImmortal
-                      ? `${IMMORTAL_XP_THRESHOLD.toLocaleString()} XP + ${IMMORTAL_STREAK_DAYS}-day streak`
-                      : rank.maxXp === Infinity
-                        ? `${rank.minXp.toLocaleString()}+ XP`
-                        : `${rank.minXp.toLocaleString()} – ${rank.maxXp.toLocaleString()} XP`}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        <div style={{ marginTop: 20, fontSize: 11, color: 'var(--text3)', letterSpacing: 0.5, lineHeight: 1.6, padding: '14px 16px', background: 'var(--surface2)', borderRadius: 10, border: '1px solid var(--border)' }}>
-          <strong style={{ color: 'var(--silver)' }}>🐐 Immortal</strong> is the highest rank — unlock it by reaching {IMMORTAL_XP_THRESHOLD.toLocaleString()} XP <em>and</em> maintaining a {IMMORTAL_STREAK_DAYS}-day unbroken streak.
-        </div>
-      </div>
-    </div>
-  )
-}
+import { getLevelInfo } from '@/lib/types'
+import { logout } from '@/app/actions/auth'
+import RanksModal from './RanksModal'
 
 export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () => void; onSettingsOpen: () => void }) {
   const { state, dispatch, totalXP, saveStatus } = useApp()
@@ -132,23 +56,30 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           </button>
         )}
 
-        {/* Level pill */}
-        <button
-          onClick={() => setRanksOpen(true)}
-          title="View ranking system"
-          style={{
+        {/* Level pill + ranks button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 99, padding: '4px 12px',
-            fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--silver)', flexShrink: 0,
-            cursor: 'pointer', transition: 'border-color 150ms',
-          }}
-          onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--gold)')}
-          onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-        >
-          <span>{levelInfo.emoji}</span>
-          <span>Lvl {levelInfo.level} — {levelInfo.name}</span>
-        </button>
+            fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--silver)',
+          }}>
+            <span>{levelInfo.emoji}</span>
+            <span>Lvl {levelInfo.level} — {levelInfo.name}</span>
+          </div>
+          <button
+            onClick={() => setRanksOpen(true)}
+            title="View all ranks"
+            style={{
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '5px 10px',
+              fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--text3)', flexShrink: 0,
+              cursor: 'pointer', transition: 'all 150ms', fontFamily: 'var(--font-dm)', fontWeight: 600,
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
+          >🏆 Ranks</button>
+        </div>
 
         {/* XP bar */}
         <div style={{ width: 180, flexShrink: 0 }}>
@@ -178,6 +109,30 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           onMouseOver={e => (e.currentTarget.style.color = 'var(--silver)')}
           onMouseOut={e => (e.currentTarget.style.color = 'var(--text3)')}
         >⚙</button>
+        <form action={logout}>
+          <button
+            type="submit"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '8px 14px', cursor: 'pointer',
+              color: 'var(--silver2)', fontSize: 11, fontWeight: 600,
+              letterSpacing: 1.5, textTransform: 'uppercase',
+              transition: 'all 150ms', fontFamily: 'var(--font-dm)',
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.borderColor = 'var(--red)'
+              e.currentTarget.style.color = 'var(--red)'
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.borderColor = 'var(--border)'
+              e.currentTarget.style.color = 'var(--silver2)'
+            }}
+          >
+            <span style={{ fontSize: 14, lineHeight: 1 }}>⏻</span>
+            Sign Out
+          </button>
+        </form>
         {/* Autosave indicator */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,

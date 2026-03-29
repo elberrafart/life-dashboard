@@ -93,6 +93,7 @@ export const DEFAULT_STATE: AppState = {
   lastCheckedDate: '',
   habitXP: 0,
   journalEntries: {},
+  moodLog: {},
 }
 
 export function loadState(): AppState {

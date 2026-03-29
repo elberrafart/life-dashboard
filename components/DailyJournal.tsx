@@ -13,6 +13,19 @@ const PROMPTS = [
   'What did you accomplish yesterday that you can build on?',
 ]
 
+const MOODS = [
+  { key: 'motivated',  emoji: '🔥', label: 'Motivated' },
+  { key: 'strong',     emoji: '💪', label: 'Strong' },
+  { key: 'encouraged', emoji: '✨', label: 'Encouraged' },
+  { key: 'focused',    emoji: '🎯', label: 'Focused' },
+  { key: 'grateful',   emoji: '🙏', label: 'Grateful' },
+  { key: 'calm',       emoji: '🌊', label: 'Calm' },
+  { key: 'sad',        emoji: '😔', label: 'Sad' },
+  { key: 'mad',        emoji: '😤', label: 'Mad' },
+  { key: 'drained',    emoji: '😞', label: 'Drained' },
+  { key: 'anxious',    emoji: '😰', label: 'Anxious' },
+]
+
 function getDailyPrompt(): string {
   const now = new Date()
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
@@ -27,13 +40,13 @@ export default function DailyJournal() {
   const [saved, setSaved] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Load today's entry on mount
+  const todayMood = state.moodLog?.[todayKey] ?? ''
+
   useEffect(() => {
     const entry = state.journalEntries?.[todayKey] ?? ''
     setText(entry)
   }, [todayKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Autosave with debounce
   function handleChange(val: string) {
     setText(val)
     if (saveTimer.current) clearTimeout(saveTimer.current)
@@ -44,12 +57,15 @@ export default function DailyJournal() {
     }, 600)
   }
 
+  function handleMood(key: string) {
+    dispatch({ type: 'SAVE_MOOD', payload: { date: todayKey, mood: key } })
+  }
+
   const prompt = getDailyPrompt()
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 
-  // Past entries (sorted newest first, excluding today)
   const pastEntries = Object.entries(state.journalEntries ?? {})
-    .filter(([date, text]) => date !== todayKey && text.trim().length > 0)
+    .filter(([date, t]) => date !== todayKey && t.trim().length > 0)
     .sort(([a], [b]) => b.localeCompare(a))
     .slice(0, 7)
 
@@ -57,8 +73,8 @@ export default function DailyJournal() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Today's entry */}
       <div className="card" style={{ padding: '20px 22px' }}>
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 2 }}>
@@ -101,7 +117,7 @@ export default function DailyJournal() {
           💭 {prompt}
         </div>
 
-        {/* Text area */}
+        {/* Textarea */}
         <textarea
           value={text}
           onChange={e => handleChange(e.target.value)}
@@ -127,10 +143,45 @@ export default function DailyJournal() {
 
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: 8, fontSize: 10, color: 'var(--text3)', letterSpacing: 1,
+          marginTop: 8, marginBottom: 20, fontSize: 10, color: 'var(--text3)', letterSpacing: 1,
         }}>
           <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
           <span>Auto-saves as you type</span>
+        </div>
+
+        {/* Mood picker */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 18 }}>
+          <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 12 }}>
+            How do you feel today?
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {MOODS.map(({ key, emoji, label }) => {
+              const selected = todayMood === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleMood(key)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 12px',
+                    borderRadius: 99,
+                    border: `1px solid ${selected ? 'var(--gold)' : 'var(--border)'}`,
+                    background: selected ? 'rgba(201,168,76,0.12)' : 'var(--surface2)',
+                    color: selected ? 'var(--gold)' : 'var(--text2)',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-dm)',
+                    fontWeight: selected ? 600 : 400,
+                    transition: 'all 150ms',
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  <span style={{ fontSize: 15, lineHeight: 1 }}>{emoji}</span>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
@@ -145,6 +196,8 @@ export default function DailyJournal() {
               const d = new Date(date + 'T00:00:00')
               const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
               const preview = entryText.trim().slice(0, 120) + (entryText.length > 120 ? '…' : '')
+              const mood = state.moodLog?.[date]
+              const moodData = mood ? MOODS.find(m => m.key === mood) : null
               return (
                 <div
                   key={date}
@@ -155,8 +208,15 @@ export default function DailyJournal() {
                     borderRadius: 8,
                   }}
                 >
-                  <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>
-                    {label}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1, textTransform: 'uppercase' }}>
+                      {label}
+                    </div>
+                    {moodData && (
+                      <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                        {moodData.emoji} {moodData.label}
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6 }}>{preview}</div>
                 </div>
