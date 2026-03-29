@@ -30,6 +30,19 @@ async function getSiteUrl() {
   return `${proto}://${host}`
 }
 
+export async function checkIsAdmin(): Promise<boolean> {
+  try {
+    const user = await getSessionUser()
+    if (!user) return false
+    if (user.email && user.email === SUPER_ADMIN_EMAIL) return true
+    const supabase = createAdminClient()
+    const { data } = await supabase.from('app_admins').select('email').eq('email', user.email).single()
+    return !!data
+  } catch {
+    return false
+  }
+}
+
 // ── User management ──────────────────────────────────────────────────────────
 
 export async function listUsers() {

@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '@/lib/context'
 import { getLevelInfo } from '@/lib/types'
 import { logout } from '@/app/actions/auth'
+import { checkIsAdmin } from '@/app/actions/admin'
 import RanksModal from './RanksModal'
 
 export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () => void; onSettingsOpen: () => void }) {
@@ -10,7 +11,10 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
   const [editingName, setEditingName] = useState(false)
   const [nameVal, setNameVal] = useState(state.playerName)
   const [ranksOpen, setRanksOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const levelInfo = getLevelInfo(totalXP, state.streak ?? 0)
+
+  useEffect(() => { checkIsAdmin().then(setIsAdmin) }, [])
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
 
@@ -109,6 +113,24 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           onMouseOver={e => (e.currentTarget.style.color = 'var(--silver)')}
           onMouseOut={e => (e.currentTarget.style.color = 'var(--text3)')}
         >⚙</button>
+        {isAdmin && (
+          <a
+            href="/admin"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '8px 14px', cursor: 'pointer',
+              color: 'var(--silver2)', fontSize: 11, fontWeight: 600,
+              letterSpacing: 1.5, textTransform: 'uppercase',
+              transition: 'all 150ms', fontFamily: 'var(--font-dm)',
+              textDecoration: 'none',
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}
+          >
+            ⚡ Admin
+          </a>
+        )}
         <form action={logout}>
           <button
             type="submit"
