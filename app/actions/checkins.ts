@@ -60,6 +60,21 @@ export async function getTodayCheckIn(): Promise<CheckIn | null> {
   return data ?? null
 }
 
+export async function getUserCheckIns(): Promise<CheckIn[]> {
+  const user = await getSessionUser()
+  if (!user) return []
+
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('check_ins')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('date', { ascending: false })
+    .limit(90)
+
+  return data ?? []
+}
+
 export async function getAllCheckIns(): Promise<CheckIn[]> {
   const isAdmin = await checkIsAdmin()
   if (!isAdmin) throw new Error('Unauthorized')
