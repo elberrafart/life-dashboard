@@ -27,7 +27,8 @@ export default function CheckIn() {
 
   // Count habits completed today
   const today = new Date().toISOString().split('T')[0]
-  const habitsCompleted = state.habits.filter(h => h.completedDates?.includes(today)).length
+  const todayHabits = state.habitHistory?.[today] ?? {}
+  const habitsCompleted = Object.values(todayHabits).filter(Boolean).length
 
   function handleSubmit() {
     if (!mood) return
