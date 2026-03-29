@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteAsAdmin, setInviteAsAdmin] = useState(false)
   const [newAdminEmail, setNewAdminEmail] = useState('')
   const [isPending, startTransition] = useTransition()
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
@@ -42,9 +43,12 @@ export default function AdminPage() {
     startTransition(async () => {
       try {
         await inviteUser(inviteEmail.trim())
-        flash(`Invite sent to ${inviteEmail.trim()}`)
+        if (inviteAsAdmin) await addAdmin(inviteEmail.trim())
+        flash(`Invite sent to ${inviteEmail.trim()}${inviteAsAdmin ? ' (admin)' : ''}`)
         setInviteEmail('')
+        setInviteAsAdmin(false)
         loadUsers()
+        loadAdmins()
       } catch (e) { err(e) }
     })
   }
@@ -146,6 +150,29 @@ export default function AdminPage() {
                 Send Invite
               </button>
             </div>
+
+            {/* Admin toggle */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, cursor: 'pointer', width: 'fit-content' }}>
+              <div
+                onClick={() => setInviteAsAdmin(v => !v)}
+                style={{
+                  width: 36, height: 20, borderRadius: 99, position: 'relative', flexShrink: 0,
+                  background: inviteAsAdmin ? 'var(--gold)' : 'var(--surface2)',
+                  border: `1px solid ${inviteAsAdmin ? 'var(--gold)' : 'var(--border2)'}`,
+                  transition: 'all 200ms', cursor: 'pointer',
+                }}
+              >
+                <div style={{
+                  position: 'absolute', top: 2, left: inviteAsAdmin ? 17 : 2,
+                  width: 14, height: 14, borderRadius: '50%',
+                  background: inviteAsAdmin ? 'var(--bg)' : 'var(--text3)',
+                  transition: 'left 200ms',
+                }} />
+              </div>
+              <span style={{ fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: inviteAsAdmin ? 'var(--gold)' : 'var(--text3)', fontFamily: 'var(--font-dm)', fontWeight: 600, transition: 'color 200ms' }}>
+                Grant admin access
+              </span>
+            </label>
           </div>
 
           {/* User list */}
