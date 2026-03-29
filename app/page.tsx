@@ -14,6 +14,7 @@ import LevelUpModal from '@/components/LevelUpModal'
 import FloatingXPLayer from '@/components/FloatingXPLayer'
 import DailyJournal from '@/components/DailyJournal'
 import ProfileCard from '@/components/ProfileCard'
+import CheckIn from '@/components/CheckIn'
 
 export type Tab = 'vision' | 'goals' | 'habits' | 'board' | 'journal'
 
@@ -88,6 +89,12 @@ export default function Page() {
         <div style={{ padding: '0 20px' }}>
           <TodayBar />
         </div>
+
+        {/* Daily Check-In */}
+        <section style={{ marginTop: 24, padding: '0 20px' }}>
+          <SectionHeading>Coach Check-In</SectionHeading>
+          <CheckIn />
+        </section>
 
         {/* Kanban — edge-to-edge scroll on mobile */}
         <section style={{ marginTop: 32, padding: '0 20px' }}>

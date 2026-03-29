@@ -1,15 +1,17 @@
 'use client'
 import { useState, useEffect, useTransition } from 'react'
 import { listUsers, inviteUser, sendPasswordReset, deleteUser, listAdmins, addAdmin, removeAdmin } from '@/app/actions/admin'
+import { getAllCheckIns, type CheckIn } from '@/app/actions/checkins'
 
 type User = { id: string; email: string; createdAt: string; lastSignIn: string | null; confirmed: boolean }
 type Admin = { email: string }
-type Tab = 'users' | 'admins'
+type Tab = 'users' | 'admins' | 'checkins'
 
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('users')
   const [users, setUsers] = useState<User[]>([])
   const [admins, setAdmins] = useState<Admin[]>([])
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [inviteEmail, setInviteEmail] = useState('')
@@ -36,7 +38,11 @@ export default function AdminPage() {
     try { setAdmins(await listAdmins()) } catch (e) { err(e) }
   }
 
-  useEffect(() => { loadUsers(); loadAdmins() }, [])
+  async function loadCheckIns() {
+    try { setCheckIns(await getAllCheckIns()) } catch (e) { err(e) }
+  }
+
+  useEffect(() => { loadUsers(); loadAdmins(); loadCheckIns() }, [])
 
   function handleInvite() {
     if (!inviteEmail.trim()) return
@@ -103,14 +109,34 @@ export default function AdminPage() {
 
   return (
     <div style={{ maxWidth: 860, margin: '0 auto', padding: '40px 20px' }}>
-      <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 32, letterSpacing: 5, color: 'var(--text)', marginBottom: 4 }}>
-        ADMIN PANEL
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 32, letterSpacing: 5, color: 'var(--text)' }}>
+          ADMIN PANEL
+        </div>
+        <a
+          href="/"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 8, padding: '8px 16px', textDecoration: 'none',
+            color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5,
+            textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
+            transition: 'all 150ms',
+          }}
+          onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+          onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
+        >
+          ← Home
+        </a>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 28 }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 28, marginTop: 20 }}>
         <button style={tabStyle(tab === 'users')} onClick={() => setTab('users')}>Users</button>
         <button style={tabStyle(tab === 'admins')} onClick={() => setTab('admins')}>Admins</button>
+        <button style={tabStyle(tab === 'checkins')} onClick={() => setTab('checkins')}>
+          Check-ins {checkIns.length > 0 && <span style={{ marginLeft: 6, background: 'var(--gold)', color: 'var(--bg)', borderRadius: 99, padding: '1px 7px', fontSize: 9, fontWeight: 700 }}>{checkIns.length}</span>}
+        </button>
       </div>
 
       {/* Flash messages */}
@@ -278,6 +304,80 @@ export default function AdminPage() {
                 >
                   Remove
                 </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ── CHECK-INS TAB ── */}
+      {tab === 'checkins' && (
+        <>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', fontSize: 11, letterSpacing: 2, color: 'var(--silver)', textTransform: 'uppercase' }}>
+              Recent Check-Ins ({checkIns.length})
+            </div>
+
+            {checkIns.length === 0 && (
+              <div style={{ padding: '40px 24px', color: 'var(--text3)', fontSize: 13, textAlign: 'center', lineHeight: 1.8 }}>
+                No check-ins yet.<br />
+                <span style={{ fontSize: 11 }}>Users submit check-ins from their dashboard.</span>
+              </div>
+            )}
+
+            {checkIns.map((ci, i) => (
+              <div
+                key={ci.id}
+                style={{
+                  padding: '16px 24px',
+                  borderBottom: i < checkIns.length - 1 ? '1px solid var(--border)' : 'none',
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr auto',
+                  gap: 16,
+                  alignItems: 'start',
+                }}
+              >
+                {/* Mood */}
+                <div style={{ fontSize: 28, lineHeight: 1, paddingTop: 2 }}>
+                  {ci.mood?.split(' ')[0] ?? '•'}
+                </div>
+
+                {/* Main info */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-dm)', fontWeight: 600 }}>
+                      {ci.user_email}
+                    </span>
+                    {ci.mood && (
+                      <span style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 7px' }}>
+                        {ci.mood.split(' ').slice(1).join(' ')}
+                      </span>
+                    )}
+                  </div>
+                  {ci.note && (
+                    <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 8 }}>
+                      "{ci.note}"
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <span style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 0.5, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px' }}>
+                      {ci.habits_completed} habits
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 0.5, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px' }}>
+                      {ci.xp_today.toLocaleString()} XP
+                    </span>
+                  </div>
+                </div>
+
+                {/* Date/time */}
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text2)', letterSpacing: 0.5 }}>
+                    {new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
+                    {new Date(ci.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
