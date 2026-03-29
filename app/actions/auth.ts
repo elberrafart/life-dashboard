@@ -47,5 +47,5 @@ export async function updatePassword(_state: UpdatePasswordState, formData: Form
     return { error: error.message }
   }
 
-  redirect('/')
+  redirect('/setup')
 }

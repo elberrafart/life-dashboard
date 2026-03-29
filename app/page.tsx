@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '@/lib/context'
 import Header from '@/components/Header'
 import TodayBar from '@/components/TodayBar'
@@ -15,6 +15,7 @@ import FloatingXPLayer from '@/components/FloatingXPLayer'
 import DailyJournal from '@/components/DailyJournal'
 import ProfileCard from '@/components/ProfileCard'
 import CheckIn from '@/components/CheckIn'
+import { getOnboardingStatus } from '@/app/actions/onboarding'
 
 export type Tab = 'vision' | 'goals' | 'habits' | 'board' | 'journal'
 
@@ -67,6 +68,12 @@ function ResetButton() {
 export default function Page() {
   const [feedOpen, setFeedOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  useEffect(() => {
+    getOnboardingStatus().then(complete => {
+      if (!complete) window.location.replace('/setup')
+    })
+  }, [])
 
   return (
     <div style={{ minHeight: '100dvh' }}>
