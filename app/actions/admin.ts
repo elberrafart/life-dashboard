@@ -3,13 +3,24 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { getSessionUser } from '@/lib/supabase-server'
 import { headers } from 'next/headers'
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+const SUPER_ADMIN_EMAIL = process.env.ADMIN_EMAIL
 
 async function assertAdmin() {
   const user = await getSessionUser()
-  if (!user || user.email !== ADMIN_EMAIL) {
-    throw new Error('Unauthorized')
-  }
+  if (!user) throw new Error('Unauthorized')
+
+  // Super-admin env var is always valid
+  if (user.email && user.email === SUPER_ADMIN_EMAIL) return
+
+  // Check database admins table
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('app_admins')
+    .select('email')
+    .eq('email', user.email)
+    .single()
+
+  if (!data) throw new Error('Unauthorized')
 }
 
 async function getSiteUrl() {
@@ -18,6 +29,8 @@ async function getSiteUrl() {
   const proto = h.get('x-forwarded-proto') ?? 'http'
   return `${proto}://${host}`
 }
+
+// ── User management ──────────────────────────────────────────────────────────
 
 export async function listUsers() {
   await assertAdmin()
@@ -57,5 +70,35 @@ export async function deleteUser(userId: string) {
   await assertAdmin()
   const supabase = createAdminClient()
   const { error } = await supabase.auth.admin.deleteUser(userId)
+  if (error) throw new Error(error.message)
+}
+
+// ── Admin management ─────────────────────────────────────────────────────────
+
+export async function listAdmins(): Promise<{ email: string }[]> {
+  await assertAdmin()
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('app_admins')
+    .select('email')
+    .order('email')
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function addAdmin(email: string) {
+  await assertAdmin()
+  const supabase = createAdminClient()
+  const { error } = await supabase.from('app_admins').insert({ email })
+  if (error) throw new Error(error.message)
+}
+
+export async function removeAdmin(email: string) {
+  const user = await getSessionUser()
+  await assertAdmin()
+  if (email === SUPER_ADMIN_EMAIL) throw new Error('Cannot remove the primary admin.')
+  if (email === user?.email) throw new Error('Cannot remove yourself.')
+  const supabase = createAdminClient()
+  const { error } = await supabase.from('app_admins').delete().eq('email', email)
   if (error) throw new Error(error.message)
 }
