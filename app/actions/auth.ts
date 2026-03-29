@@ -15,6 +15,9 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
     return { error: `Env vars missing: URL=${!!process.env.SUPABASE_URL} KEY=${!!process.env.SUPABASE_KEY}` }
   }
+  if (!process.env.SUPABASE_URL.includes('supabase.co')) {
+    return { error: `Bad URL: "${process.env.SUPABASE_URL}"` }
+  }
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
