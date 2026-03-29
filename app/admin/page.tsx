@@ -31,11 +31,13 @@ export default function AdminPage() {
   }
 
   async function loadUsers() {
-    try { setUsers(await listUsers()) } catch (e) { err(e) }
+    const result = await listUsers()
+    if ('error' in result && result.error) err(new Error(result.error))
+    else setUsers(result.users ?? [])
   }
 
   async function loadAdmins() {
-    try { setAdmins(await listAdmins()) } catch (e) { err(e) }
+    setAdmins(await listAdmins())
   }
 
   async function loadCheckIns() {
@@ -47,48 +49,57 @@ export default function AdminPage() {
   function handleInvite() {
     if (!inviteEmail.trim()) return
     startTransition(async () => {
-      try {
-        await inviteUser(inviteEmail.trim())
-        if (inviteAsAdmin) await addAdmin(inviteEmail.trim())
-        flash(`Invite sent to ${inviteEmail.trim()}${inviteAsAdmin ? ' (admin)' : ''}`)
-        setInviteEmail('')
-        setInviteAsAdmin(false)
-        loadUsers()
-        loadAdmins()
-      } catch (e) { err(e) }
+      const email = inviteEmail.trim()
+      const result = await inviteUser(email)
+      if (result.error) { err(new Error(result.error)); return }
+      if (inviteAsAdmin) {
+        const r2 = await addAdmin(email)
+        if (r2.error) { err(new Error(r2.error)); return }
+      }
+      flash(`Invite sent to ${email}${inviteAsAdmin ? ' (admin)' : ''}`)
+      setInviteEmail('')
+      setInviteAsAdmin(false)
+      loadUsers()
+      loadAdmins()
     })
   }
 
   function handleReset(email: string) {
     startTransition(async () => {
-      try { await sendPasswordReset(email); flash(`Password reset sent to ${email}`) }
-      catch (e) { err(e) }
+      const result = await sendPasswordReset(email)
+      if (result.error) err(new Error(result.error))
+      else flash(`Password reset sent to ${email}`)
     })
   }
 
   function handleDelete(userId: string) {
     startTransition(async () => {
-      try { await deleteUser(userId); setDeleteConfirm(null); flash('User deleted.'); loadUsers() }
-      catch (e) { err(e) }
+      const result = await deleteUser(userId)
+      if (result.error) { err(new Error(result.error)); return }
+      setDeleteConfirm(null)
+      flash('User deleted.')
+      loadUsers()
     })
   }
 
   function handleAddAdmin() {
     if (!newAdminEmail.trim()) return
     startTransition(async () => {
-      try {
-        await addAdmin(newAdminEmail.trim())
-        flash(`${newAdminEmail.trim()} is now an admin`)
-        setNewAdminEmail('')
-        loadAdmins()
-      } catch (e) { err(e) }
+      const email = newAdminEmail.trim()
+      const result = await addAdmin(email)
+      if (result.error) { err(new Error(result.error)); return }
+      flash(`${email} is now an admin`)
+      setNewAdminEmail('')
+      loadAdmins()
     })
   }
 
   function handleRemoveAdmin(email: string) {
     startTransition(async () => {
-      try { await removeAdmin(email); flash(`Removed admin: ${email}`); loadAdmins() }
-      catch (e) { err(e) }
+      const result = await removeAdmin(email)
+      if (result.error) { err(new Error(result.error)); return }
+      flash(`Removed admin: ${email}`)
+      loadAdmins()
     })
   }
 

@@ -9,10 +9,8 @@ async function assertAdmin() {
   const user = await getSessionUser()
   if (!user) throw new Error('Unauthorized')
 
-  // Super-admin env var is always valid
   if (user.email && user.email === SUPER_ADMIN_EMAIL) return
 
-  // Check database admins table
   const supabase = createAdminClient()
   const { data } = await supabase
     .from('app_admins')
@@ -46,72 +44,103 @@ export async function checkIsAdmin(): Promise<boolean> {
 // ── User management ──────────────────────────────────────────────────────────
 
 export async function listUsers() {
-  await assertAdmin()
-  const supabase = createAdminClient()
-  const { data, error } = await supabase.auth.admin.listUsers()
-  if (error) throw new Error(error.message)
-  return data.users.map(u => ({
-    id: u.id,
-    email: u.email ?? '',
-    createdAt: u.created_at,
-    lastSignIn: u.last_sign_in_at ?? null,
-    confirmed: !!u.email_confirmed_at,
-  }))
+  try {
+    await assertAdmin()
+    const supabase = createAdminClient()
+    const { data, error } = await supabase.auth.admin.listUsers()
+    if (error) return { error: error.message, users: [] }
+    return {
+      users: data.users.map(u => ({
+        id: u.id,
+        email: u.email ?? '',
+        createdAt: u.created_at,
+        lastSignIn: u.last_sign_in_at ?? null,
+        confirmed: !!u.email_confirmed_at,
+      })),
+    }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Failed to load users', users: [] }
+  }
 }
 
-export async function inviteUser(email: string) {
-  await assertAdmin()
-  const supabase = createAdminClient()
-  const siteUrl = await getSiteUrl()
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback`,
-  })
-  if (error) throw new Error(error.message)
+export async function inviteUser(email: string): Promise<{ error?: string }> {
+  try {
+    await assertAdmin()
+    const supabase = createAdminClient()
+    const siteUrl = await getSiteUrl()
+    const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${siteUrl}/auth/callback`,
+    })
+    if (error) return { error: error.message }
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Failed to invite user' }
+  }
 }
 
-export async function sendPasswordReset(email: string) {
-  await assertAdmin()
-  const supabase = createAdminClient()
-  const siteUrl = await getSiteUrl()
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback`,
-  })
-  if (error) throw new Error(error.message)
+export async function sendPasswordReset(email: string): Promise<{ error?: string }> {
+  try {
+    await assertAdmin()
+    const supabase = createAdminClient()
+    const siteUrl = await getSiteUrl()
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/auth/callback`,
+    })
+    if (error) return { error: error.message }
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Failed to send reset' }
+  }
 }
 
-export async function deleteUser(userId: string) {
-  await assertAdmin()
-  const supabase = createAdminClient()
-  const { error } = await supabase.auth.admin.deleteUser(userId)
-  if (error) throw new Error(error.message)
+export async function deleteUser(userId: string): Promise<{ error?: string }> {
+  try {
+    await assertAdmin()
+    const supabase = createAdminClient()
+    const { error } = await supabase.auth.admin.deleteUser(userId)
+    if (error) return { error: error.message }
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Failed to delete user' }
+  }
 }
 
 // ── Admin management ─────────────────────────────────────────────────────────
 
 export async function listAdmins(): Promise<{ email: string }[]> {
-  await assertAdmin()
-  const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .from('app_admins')
-    .select('email')
-    .order('email')
-  if (error) throw new Error(error.message)
-  return data ?? []
+  try {
+    await assertAdmin()
+    const supabase = createAdminClient()
+    const { data } = await supabase.from('app_admins').select('email').order('email')
+    return data ?? []
+  } catch {
+    return []
+  }
 }
 
-export async function addAdmin(email: string) {
-  await assertAdmin()
-  const supabase = createAdminClient()
-  const { error } = await supabase.from('app_admins').insert({ email })
-  if (error) throw new Error(error.message)
+export async function addAdmin(email: string): Promise<{ error?: string }> {
+  try {
+    await assertAdmin()
+    const supabase = createAdminClient()
+    const { error } = await supabase.from('app_admins').insert({ email })
+    if (error) return { error: error.message }
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Failed to add admin' }
+  }
 }
 
-export async function removeAdmin(email: string) {
-  const user = await getSessionUser()
-  await assertAdmin()
-  if (email === SUPER_ADMIN_EMAIL) throw new Error('Cannot remove the primary admin.')
-  if (email === user?.email) throw new Error('Cannot remove yourself.')
-  const supabase = createAdminClient()
-  const { error } = await supabase.from('app_admins').delete().eq('email', email)
-  if (error) throw new Error(error.message)
+export async function removeAdmin(email: string): Promise<{ error?: string }> {
+  try {
+    const user = await getSessionUser()
+    await assertAdmin()
+    if (email === SUPER_ADMIN_EMAIL) return { error: 'Cannot remove the primary admin.' }
+    if (email === user?.email) return { error: 'Cannot remove yourself.' }
+    const supabase = createAdminClient()
+    const { error } = await supabase.from('app_admins').delete().eq('email', email)
+    if (error) return { error: error.message }
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Failed to remove admin' }
+  }
 }
