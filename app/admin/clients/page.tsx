@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { getAllProfiles, getProfileCheckIns, type UserProfile } from '@/app/actions/profiles'
 import { getLevelInfo } from '@/lib/types'
+import CheckInCalendar from '@/components/CheckInCalendar'
 
 type CheckIn = {
   id: string; date: string; mood: string | null; note: string | null
@@ -116,25 +117,11 @@ export default function ClientsPage() {
           {checkIns.length === 0 && (
             <div style={{ padding: '28px 20px', fontSize: 12, color: 'var(--text3)', textAlign: 'center' }}>No check-ins submitted yet</div>
           )}
-          {checkIns.map((ci, i) => (
-            <div key={ci.id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 14, padding: '14px 20px', borderBottom: i < checkIns.length - 1 ? '1px solid var(--border)' : 'none', alignItems: 'start' }}>
-              <div style={{ fontSize: 24 }}>{ci.mood?.split(' ')[0] ?? '•'}</div>
-              <div>
-                <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}>
-                  {ci.mood?.split(' ').slice(1).join(' ') ?? ''}
-                </div>
-                {ci.note && <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 6 }}>"{ci.note}"</div>}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ fontSize: 10, color: 'var(--text3)', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 7px' }}>{ci.habits_completed} habits</span>
-                  <span style={{ fontSize: 10, color: 'var(--text3)', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 7px' }}>{ci.xp_today.toLocaleString()} XP</span>
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 11, color: 'var(--text2)' }}>{new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{new Date(ci.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-              </div>
+          {checkIns.length > 0 && (
+            <div style={{ padding: '20px 24px 24px' }}>
+              <CheckInCalendar checkIns={checkIns} />
             </div>
-          ))}
+          )}
         </div>
 
         <div style={{ marginTop: 16, fontSize: 10, color: 'var(--text3)', textAlign: 'right', letterSpacing: 1 }}>

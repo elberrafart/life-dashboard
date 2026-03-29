@@ -2,6 +2,7 @@
 import { useState, useEffect, useTransition } from 'react'
 import { useApp } from '@/lib/context'
 import { submitCheckIn, getTodayCheckIn, getUserCheckIns, type CheckIn } from '@/app/actions/checkins'
+import CheckInCalendar from '@/components/CheckInCalendar'
 
 const MOODS = [
   { emoji: '🔥', label: 'On Fire' },
@@ -12,14 +13,6 @@ const MOODS = [
   { emoji: '😤', label: 'Struggling' },
 ]
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr + 'T00:00:00')
-  const today = new Date().toISOString().split('T')[0]
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-  if (dateStr === today) return 'Today'
-  if (dateStr === yesterday) return 'Yesterday'
-  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
-}
 
 function HistoryPanel({ onClose }: { onClose: () => void }) {
   const [entries, setEntries] = useState<CheckIn[] | null>(null)
@@ -55,49 +48,17 @@ function HistoryPanel({ onClose }: { onClose: () => void }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer', padding: 4 }}>✕</button>
         </div>
 
-        {/* List */}
-        <div style={{ overflowY: 'auto', padding: '12px 24px 32px', flex: 1 }}>
+        {/* Calendar */}
+        <div style={{ overflowY: 'auto', padding: '16px 24px 32px', flex: 1 }}>
           {!entries && (
             <div style={{ textAlign: 'center', padding: 40, color: 'var(--text3)', fontSize: 13 }}>Loading…</div>
           )}
           {entries && entries.length === 0 && (
             <div style={{ textAlign: 'center', padding: 40, color: 'var(--text3)', fontSize: 13 }}>No check-ins yet.</div>
           )}
-          {entries && entries.map((ci, i) => (
-            <div key={ci.id} style={{
-              padding: '16px 0',
-              borderBottom: i < entries.length - 1 ? '1px solid var(--border)' : 'none',
-              display: 'flex', gap: 14,
-            }}>
-              {/* Mood emoji */}
-              <div style={{ fontSize: 26, lineHeight: 1, paddingTop: 2, flexShrink: 0 }}>
-                {ci.mood?.split(' ')[0] ?? '—'}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-                  <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 14, letterSpacing: 2, color: 'var(--text)' }}>
-                    {formatDate(ci.date)}
-                  </div>
-                  <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1, flexShrink: 0 }}>
-                    {ci.mood?.split(' ').slice(1).join(' ')}
-                  </div>
-                </div>
-                {ci.note && (
-                  <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 6 }}>
-                    {ci.note}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 5, padding: '3px 8px' }}>
-                    {ci.habits_completed} habits
-                  </span>
-                  <span style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 5, padding: '3px 8px' }}>
-                    {ci.xp_today.toLocaleString()} XP
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
+          {entries && entries.length > 0 && (
+            <CheckInCalendar checkIns={entries} />
+          )}
         </div>
       </div>
     </div>
