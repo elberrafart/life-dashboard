@@ -23,6 +23,12 @@ export async function createClient() {
   )
 }
 
+export async function getSessionUser() {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.user ?? null
+}
+
 export async function createAdminClient() {
   const cookieStore = await cookies()
 
