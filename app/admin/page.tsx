@@ -18,7 +18,7 @@ export default function AdminPage() {
   const [inviteAsAdmin, setInviteAsAdmin] = useState(false)
   const [newAdminEmail, setNewAdminEmail] = useState('')
   const [isPending, startTransition] = useTransition()
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
 
   function flash(msg: string) {
     setMessage(msg)
@@ -72,13 +72,19 @@ export default function AdminPage() {
     })
   }
 
-  function handleDelete(userId: string) {
+  function handleDelete(user: User) {
     startTransition(async () => {
-      const result = await deleteUser(userId)
-      if (result.error) { err(new Error(result.error)); return }
-      setDeleteConfirm(null)
-      flash('User deleted.')
-      loadUsers()
+      // Optimistically remove from list immediately
+      setUsers(prev => prev.filter(u => u.id !== user.id))
+      setDeleteTarget(null)
+      const result = await deleteUser(user.id)
+      if (result.error) {
+        // Restore user if deletion failed
+        setUsers(prev => [...prev, user].sort((a, b) => a.email.localeCompare(b.email)))
+        err(new Error(result.error))
+      } else {
+        flash(`${user.email} has been deleted.`)
+      }
     })
   }
 
@@ -120,6 +126,60 @@ export default function AdminPage() {
 
   return (
     <div style={{ maxWidth: 860, margin: '0 auto', padding: '40px 20px' }}>
+
+      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {deleteTarget && (
+        <div
+          onClick={() => setDeleteTarget(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="card"
+            style={{ width: '100%', maxWidth: 420, padding: '32px 28px' }}
+          >
+            <div style={{ fontSize: 28, marginBottom: 12, textAlign: 'center' }}>⚠️</div>
+            <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 22, letterSpacing: 3, color: 'var(--text)', marginBottom: 8, textAlign: 'center' }}>
+              DELETE USER
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text2)', textAlign: 'center', marginBottom: 6, lineHeight: 1.6 }}>
+              You are about to permanently delete:
+            </div>
+            <div style={{ fontSize: 14, color: 'var(--gold)', fontWeight: 700, textAlign: 'center', marginBottom: 6, fontFamily: 'var(--font-dm)', wordBreak: 'break-all' }}>
+              {deleteTarget.email}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', marginBottom: 28, lineHeight: 1.6 }}>
+              This cannot be undone. All their data will be lost.
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={() => handleDelete(deleteTarget)}
+                disabled={isPending}
+                style={{
+                  background: '#c0392b', color: '#fff', border: 'none',
+                  borderRadius: 8, padding: '13px', fontSize: 12, fontWeight: 700,
+                  letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer',
+                  fontFamily: 'var(--font-dm)', opacity: isPending ? 0.6 : 1,
+                }}
+              >
+                Yes, Delete This User
+              </button>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                style={{
+                  background: 'var(--surface2)', border: '1px solid var(--border2)',
+                  borderRadius: 8, padding: '13px', fontSize: 12, color: 'var(--text2)',
+                  cursor: 'pointer', letterSpacing: 1.5, textTransform: 'uppercase',
+                  fontFamily: 'var(--font-dm)', fontWeight: 600,
+                }}
+              >
+                Cancel — Keep User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
         <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 32, letterSpacing: 5, color: 'var(--text)' }}>
           ADMIN PANEL
@@ -247,20 +307,12 @@ export default function AdminPage() {
                   Reset Password
                 </button>
 
-                {deleteConfirm === u.id ? (
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => handleDelete(u.id)} style={{ background: '#e05c5c', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 10, color: '#fff', cursor: 'pointer', letterSpacing: 1, textTransform: 'uppercase', fontFamily: 'var(--font-dm)', whiteSpace: 'nowrap' }}>
-                      Confirm Delete
-                    </button>
-                    <button onClick={() => setDeleteConfirm(null)} style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 6, padding: '6px 12px', fontSize: 10, color: 'var(--text3)', cursor: 'pointer', letterSpacing: 1, textTransform: 'uppercase', fontFamily: 'var(--font-dm)' }}>
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => setDeleteConfirm(u.id)} style={{ background: 'transparent', border: '1px solid rgba(224,92,92,0.3)', borderRadius: 6, padding: '6px 12px', fontSize: 10, color: '#e05c5c', cursor: 'pointer', letterSpacing: 1, textTransform: 'uppercase', fontFamily: 'var(--font-dm)' }}>
-                    Delete
-                  </button>
-                )}
+                <button
+                  onClick={() => setDeleteTarget(u)}
+                  style={{ background: 'transparent', border: '1px solid rgba(224,92,92,0.3)', borderRadius: 6, padding: '6px 12px', fontSize: 10, color: '#e05c5c', cursor: 'pointer', letterSpacing: 1, textTransform: 'uppercase', fontFamily: 'var(--font-dm)' }}
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>
