@@ -12,6 +12,10 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
     return { error: 'Email and password are required.' }
   }
 
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+    return { error: `Env vars missing: URL=${!!process.env.SUPABASE_URL} KEY=${!!process.env.SUPABASE_KEY}` }
+  }
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
