@@ -98,6 +98,13 @@ export async function deleteUser(userId: string): Promise<{ error?: string }> {
   try {
     await assertAdmin()
     const supabase = createAdminClient()
+
+    // Delete dependent rows before removing the auth user
+    for (const table of ['check_ins', 'profiles', 'onboarding'] as const) {
+      const { error } = await supabase.from(table).delete().eq('user_id', userId)
+      if (error) return { error: `Failed to clean up ${table}: ${error.message}` }
+    }
+
     const { error } = await supabase.auth.admin.deleteUser(userId)
     if (error) return { error: error.message }
     return {}
