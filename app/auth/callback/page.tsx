@@ -37,7 +37,12 @@ export default function AuthCallbackPage() {
       if (code) {
         const result = await exchangeCode(code)
         if (result.error) { setError(result.error); return }
-        router.replace('/')
+        const codeType = query.get('type')
+        if (codeType === 'recovery' || codeType === 'invite') {
+          router.replace('/update-password')
+        } else {
+          router.replace('/')
+        }
         return
       }
 

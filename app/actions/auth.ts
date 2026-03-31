@@ -39,7 +39,7 @@ export async function resetPassword(_state: ResetPasswordState, formData: FormDa
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback`,
+    redirectTo: `${siteUrl}/auth/callback?type=recovery`,
   })
 
   if (error) return { error: error.message }
