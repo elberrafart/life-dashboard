@@ -20,6 +20,7 @@ export default function AdminPage() {
   const [isPending, startTransition] = useTransition()
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [newCredentials, setNewCredentials] = useState<{ email: string; password: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   function flash(msg: string) {
     setMessage(msg)
@@ -208,17 +209,32 @@ export default function AdminPage() {
                     {newCredentials.password}
                   </div>
                   <button
-                    onClick={() => navigator.clipboard.writeText(newCredentials.password)}
-                    style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', fontSize: 10, color: 'var(--text2)', cursor: 'pointer', letterSpacing: 1, textTransform: 'uppercase', fontFamily: 'var(--font-dm)', whiteSpace: 'nowrap' }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(newCredentials.password).then(() => {
+                        setCopied(true)
+                        setTimeout(() => setCopied(false), 2000)
+                      })
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = copied ? 'rgba(76,175,125,0.4)' : 'var(--border2)'; e.currentTarget.style.color = copied ? '#4caf7d' : 'var(--text2)' }}
+                    style={{
+                      background: 'var(--surface2)',
+                      border: `1px solid ${copied ? 'rgba(76,175,125,0.4)' : 'var(--border2)'}`,
+                      borderRadius: 8, padding: '10px 14px', fontSize: 10,
+                      color: copied ? '#4caf7d' : 'var(--text2)',
+                      cursor: 'pointer', letterSpacing: 1, textTransform: 'uppercase',
+                      fontFamily: 'var(--font-dm)', whiteSpace: 'nowrap',
+                      transition: 'color 150ms, border-color 150ms',
+                    }}
                   >
-                    Copy
+                    {copied ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
               </div>
             </div>
 
             <button
-              onClick={() => setNewCredentials(null)}
+              onClick={() => { setNewCredentials(null); setCopied(false) }}
               style={{ width: '100%', background: 'var(--gold)', color: 'var(--bg)', border: 'none', borderRadius: 8, padding: '13px', fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-dm)' }}
             >
               Done
