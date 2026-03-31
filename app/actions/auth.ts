@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 
 export type LoginState = { error?: string } | undefined
 export type UpdatePasswordState = { error?: string; success?: string } | undefined
+export type ResetPasswordState = { error?: string; success?: string } | undefined
 
 export async function login(_state: LoginState, formData: FormData): Promise<LoginState> {
   const email = formData.get('email') as string
@@ -21,6 +22,22 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   }
 
   redirect('/')
+}
+
+export async function resetPassword(_state: ResetPasswordState, formData: FormData): Promise<ResetPasswordState> {
+  const email = (formData.get('email') as string)?.trim().toLowerCase()
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { error: 'Please enter a valid email address.' }
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback`,
+  })
+
+  if (error) return { error: error.message }
+  return { success: 'Check your email for a reset link.' }
 }
 
 export async function logout() {
