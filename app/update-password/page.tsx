@@ -91,9 +91,7 @@ export default function UpdatePasswordPage() {
           />
 
           {/* Live requirements */}
-          {password.length > 0 && (
-            <PasswordRules password={password} />
-          )}
+          <PasswordRules password={password} />
 
           <input
             type="password"
