@@ -70,7 +70,7 @@ export async function inviteUser(email: string): Promise<{ error?: string }> {
     const supabase = createAdminClient()
     const siteUrl = getSiteUrl()
     const { error } = await supabase.auth.admin.inviteUserByEmail(trimmed, {
-      redirectTo: `${siteUrl}/auth/callback`,
+      redirectTo: `${siteUrl}/auth/callback?type=invite`,
     })
     if (error) return { error: error.message }
     return {}
