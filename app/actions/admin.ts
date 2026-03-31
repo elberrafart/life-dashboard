@@ -123,7 +123,7 @@ export async function addAdmin(email: string): Promise<{ error?: string }> {
   try {
     await assertAdmin()
     const supabase = createAdminClient()
-    const { error } = await supabase.from('app_admins').insert({ email })
+    const { error } = await supabase.from('app_admins').upsert({ email }, { onConflict: 'email', ignoreDuplicates: true })
     if (error) return { error: error.message }
     return {}
   } catch (e) {
