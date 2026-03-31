@@ -1,5 +1,6 @@
 'use server'
 import { createClient } from '@/lib/supabase-server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
 export type LoginState = { error?: string } | undefined
@@ -31,7 +32,12 @@ export async function resetPassword(_state: ResetPasswordState, formData: FormDa
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
-  const supabase = await createClient()
+  // Use a stateless client — no cookies, no session refresh side effects
+  const supabase = createSupabaseClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback`,
   })
