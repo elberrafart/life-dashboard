@@ -60,7 +60,21 @@ export async function listUsers() {
   }
 }
 
-export async function inviteUser(email: string): Promise<{ error?: string }> {
+function generateTempPassword(): string {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+  const lower = 'abcdefghjkmnpqrstuvwxyz'
+  const digits = '23456789'
+  const special = '@#$!'
+  const all = upper + lower + digits
+  let pass = ''
+  pass += upper[Math.floor(Math.random() * upper.length)]
+  pass += digits[Math.floor(Math.random() * digits.length)]
+  pass += special[Math.floor(Math.random() * special.length)]
+  for (let i = 0; i < 7; i++) pass += all[Math.floor(Math.random() * all.length)]
+  return pass.split('').sort(() => Math.random() - 0.5).join('')
+}
+
+export async function createUser(email: string): Promise<{ error?: string; tempPassword?: string }> {
   try {
     const trimmed = email.trim().toLowerCase()
     if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) || trimmed.length > 254) {
@@ -68,14 +82,17 @@ export async function inviteUser(email: string): Promise<{ error?: string }> {
     }
     await assertAdmin()
     const supabase = createAdminClient()
-    const siteUrl = getSiteUrl()
-    const { error } = await supabase.auth.admin.inviteUserByEmail(trimmed, {
-      redirectTo: `${siteUrl}/auth/callback?type=invite`,
+    const tempPassword = generateTempPassword()
+    const { error } = await supabase.auth.admin.createUser({
+      email: trimmed,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { force_password_change: true },
     })
     if (error) return { error: error.message }
-    return {}
+    return { tempPassword }
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Failed to invite user' }
+    return { error: e instanceof Error ? e.message : 'Failed to create user' }
   }
 }
 

@@ -16,10 +16,14 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
     return { error: 'Invalid email or password.' }
+  }
+
+  if (data.user?.user_metadata?.force_password_change) {
+    redirect('/update-password')
   }
 
   redirect('/')
@@ -73,7 +77,10 @@ export async function updatePassword(_state: UpdatePasswordState, formData: Form
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.updateUser({ password })
+  const { error } = await supabase.auth.updateUser({
+    password,
+    data: { force_password_change: false },
+  })
 
   if (error) {
     return { error: error.message }

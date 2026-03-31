@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useTransition } from 'react'
-import { listUsers, inviteUser, sendPasswordReset, deleteUser, listAdmins, addAdmin, removeAdmin } from '@/app/actions/admin'
+import { listUsers, createUser, sendPasswordReset, deleteUser, listAdmins, addAdmin, removeAdmin } from '@/app/actions/admin'
 import { getAllCheckIns, type CheckIn } from '@/app/actions/checkins'
 
 type User = { id: string; email: string; createdAt: string; lastSignIn: string | null; confirmed: boolean }
@@ -19,6 +19,7 @@ export default function AdminPage() {
   const [newAdminEmail, setNewAdminEmail] = useState('')
   const [isPending, startTransition] = useTransition()
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
+  const [newCredentials, setNewCredentials] = useState<{ email: string; password: string } | null>(null)
 
   function flash(msg: string) {
     setMessage(msg)
@@ -46,19 +47,19 @@ export default function AdminPage() {
 
   useEffect(() => { loadUsers(); loadAdmins(); loadCheckIns() }, [])
 
-  function handleInvite() {
+  function handleCreate() {
     if (!inviteEmail.trim()) return
     startTransition(async () => {
       const email = inviteEmail.trim()
-      const result = await inviteUser(email)
+      const result = await createUser(email)
       if (result.error) { err(new Error(result.error)); return }
       if (inviteAsAdmin) {
         const r2 = await addAdmin(email)
         if (r2.error) { err(new Error(r2.error)); return }
       }
-      flash(`Invite sent to ${email}${inviteAsAdmin ? ' (admin)' : ''}`)
       setInviteEmail('')
       setInviteAsAdmin(false)
+      setNewCredentials({ email, password: result.tempPassword! })
       loadUsers()
       loadAdmins()
     })
@@ -180,6 +181,52 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+      {/* ── CREDENTIALS MODAL ── */}
+      {newCredentials && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        >
+          <div className="card" style={{ width: '100%', maxWidth: 420, padding: '32px 28px' }}>
+            <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 22, letterSpacing: 3, color: 'var(--text)', marginBottom: 8 }}>
+              ACCOUNT CREATED
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 24, lineHeight: 1.6 }}>
+              Share these credentials with the user. They'll be prompted to set a new password on first sign in.
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+              <div>
+                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 6 }}>Email</div>
+                <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-dm)' }}>
+                  {newCredentials.email}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 6 }}>Temporary Password</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: 'var(--gold)', fontFamily: 'monospace', letterSpacing: 2 }}>
+                    {newCredentials.password}
+                  </div>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(newCredentials.password)}
+                    style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 8, padding: '10px 14px', fontSize: 10, color: 'var(--text2)', cursor: 'pointer', letterSpacing: 1, textTransform: 'uppercase', fontFamily: 'var(--font-dm)', whiteSpace: 'nowrap' }}
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setNewCredentials(null)}
+              style={{ width: '100%', background: 'var(--gold)', color: 'var(--bg)', border: 'none', borderRadius: 8, padding: '13px', fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-dm)' }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
         <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 32, letterSpacing: 5, color: 'var(--text)' }}>
           ADMIN PANEL
@@ -228,7 +275,7 @@ export default function AdminPage() {
           {/* Invite */}
           <div className="card" style={{ padding: '22px 24px', marginBottom: 24 }}>
             <div style={{ fontSize: 11, letterSpacing: 2, color: 'var(--silver)', textTransform: 'uppercase', marginBottom: 14 }}>
-              Invite New User
+              Create New User
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <input
@@ -236,15 +283,15 @@ export default function AdminPage() {
                 placeholder="user@email.com"
                 value={inviteEmail}
                 onChange={e => setInviteEmail(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleInvite()}
+                onKeyDown={e => e.key === 'Enter' && handleCreate()}
                 style={{ flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-dm)' }}
               />
               <button
-                onClick={handleInvite}
+                onClick={handleCreate}
                 disabled={isPending || !inviteEmail.trim()}
                 style={{ background: 'var(--gold)', color: 'var(--bg)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-dm)', opacity: isPending || !inviteEmail.trim() ? 0.5 : 1, whiteSpace: 'nowrap' }}
               >
-                Send Invite
+                Create Account
               </button>
             </div>
 
