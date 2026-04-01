@@ -1,6 +1,30 @@
 import { AppState } from './types'
 
 const STORAGE_KEY = 'life-dashboard-v5'
+const IMAGE_STORAGE_KEY = 'elite-action-images-v1'
+
+function saveImages(goals: AppState['goals']): void {
+  if (typeof window === 'undefined') return
+  try {
+    const images: Record<string, string> = {}
+    for (const goal of goals) {
+      if (goal.visionImageBase64) images[goal.id] = goal.visionImageBase64
+    }
+    localStorage.setItem(IMAGE_STORAGE_KEY, JSON.stringify(images))
+  } catch {
+    // quota exceeded
+  }
+}
+
+export function loadImages(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = localStorage.getItem(IMAGE_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as Record<string, string>) : {}
+  } catch {
+    return {}
+  }
+}
 
 export const DEFAULT_STATE: AppState = {
   playerName: 'Player',
@@ -65,6 +89,8 @@ export const DEFAULT_STATE: AppState = {
     { id: 'k11', name: 'Log daily expenses', column: 'done', priority: 'medium', createdAt: new Date().toISOString(), linkedGoalId: 'g3', xpAwarded: true },
   ],
   xpFeed: [],
+  goalArchive: [],
+  kanbanArchive: [],
   vision: {
     quoteText: 'The only way to do great work is to love what you do.',
     quoteSub: '— Steve Jobs',
@@ -88,6 +114,25 @@ export function loadState(): AppState {
     if (!parsed.kanban || parsed.kanban.length < 5) {
       merged.kanban = DEFAULT_STATE.kanban
     }
+    // Merge images stored separately (prefer separate key; fall back to embedded for old data)
+    const images = loadImages()
+    merged.goals = merged.goals.map(g => ({
+      ...g,
+      visionImageBase64: images[g.id] ?? g.visionImageBase64,
+    }))
+    // Ensure archive arrays exist (backward compat)
+    if (!merged.goalArchive) merged.goalArchive = []
+    if (!merged.kanbanArchive) merged.kanbanArchive = []
+    // Auto-archive done kanban cards older than 1 day
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
+    const toArchive = merged.kanban.filter(k =>
+      k.column === 'done' && k.completedAt && new Date(k.completedAt).getTime() < oneDayAgo
+    )
+    if (toArchive.length > 0) {
+      const archiveIds = new Set(toArchive.map(k => k.id))
+      merged.kanban = merged.kanban.filter(k => !archiveIds.has(k.id))
+      merged.kanbanArchive = [...(merged.kanbanArchive ?? []), ...toArchive]
+    }
     return merged
   } catch {
     return DEFAULT_STATE
@@ -96,8 +141,14 @@ export function loadState(): AppState {
 
 export function saveState(state: AppState): void {
   if (typeof window === 'undefined') return
+  // Save images separately to avoid hitting the main-state quota limit
+  saveImages(state.goals)
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    const stateWithoutImages = {
+      ...state,
+      goals: state.goals.map(({ visionImageBase64: _, ...rest }) => rest),
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateWithoutImages))
   } catch {
     // storage full or unavailable
   }

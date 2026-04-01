@@ -94,7 +94,7 @@ export default function GoalModal({ goalId, onClose }: { goalId: string; onClose
 
   function handleDeleteGoal() {
     if (!deleteConfirm) { setDeleteConfirm(true); return }
-    dispatch({ type: 'DELETE_GOAL', payload: goal!.id })
+    dispatch({ type: 'ARCHIVE_GOAL', payload: goal!.id })
     onClose()
   }
 
@@ -325,7 +325,7 @@ export default function GoalModal({ goalId, onClose }: { goalId: string; onClose
             cursor: 'pointer', transition: 'all 200ms', fontFamily: 'var(--font-dm)',
           }}
         >
-          {deleteConfirm ? '⚠ Are you sure? Click again to confirm' : 'Delete this goal'}
+          {deleteConfirm ? '⚠ Are you sure? Click again to confirm' : 'Archive this goal'}
         </button>
       </div>
     </div>

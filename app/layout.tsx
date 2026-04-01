@@ -19,12 +19,12 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Life OS Dashboard',
+  title: 'Elite Action',
   description: 'Your gamified life dashboard',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Life OS',
+    title: 'Elite Action',
   },
 }
 

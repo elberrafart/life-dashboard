@@ -43,6 +43,7 @@ export default function KanbanBoard() {
       ...card,
       column: col,
       xpAwarded: movingToDone ? true : movingFromDone ? false : card.xpAwarded,
+      completedAt: movingToDone ? new Date().toISOString() : movingFromDone ? undefined : card.completedAt,
     }})
     if (movingToDone) {
       const cx = x ?? window.innerWidth / 2

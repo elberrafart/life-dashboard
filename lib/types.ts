@@ -14,6 +14,10 @@ export type Goal = {
   xp: number
   tasks: Task[]
   visionImageBase64?: string
+  imageOffset?: { x: number; y: number }
+  imageScale?: number
+  imageAspect?: 'portrait' | 'landscape'
+  archivedAt?: string
 }
 
 export type Habit = {
@@ -30,6 +34,7 @@ export type KanbanCard = {
   priority: 'high' | 'medium' | 'low'
   createdAt: string
   xpAwarded?: boolean
+  completedAt?: string
 }
 
 export type XPEvent = {
@@ -59,6 +64,8 @@ export type AppState = {
   habitXP: number
   journalEntries: Record<string, string>
   moodLog: Record<string, string>
+  goalArchive: Goal[]
+  kanbanArchive: KanbanCard[]
 }
 
 export type Level = {

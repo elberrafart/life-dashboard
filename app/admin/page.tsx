@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useTransition } from 'react'
+import Link from 'next/link'
 import { listUsers, createUser, sendPasswordReset, deleteUser, listAdmins, addAdmin, removeAdmin } from '@/app/actions/admin'
 import { getAllCheckIns, type CheckIn } from '@/app/actions/checkins'
 
@@ -247,7 +248,7 @@ export default function AdminPage() {
         <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 32, letterSpacing: 5, color: 'var(--text)' }}>
           ADMIN PANEL
         </div>
-        <a
+        <Link
           href="/"
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
@@ -261,7 +262,7 @@ export default function AdminPage() {
           onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
         >
           ← Home
-        </a>
+        </Link>
       </div>
 
       {/* Tabs */}

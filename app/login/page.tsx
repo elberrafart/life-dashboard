@@ -44,7 +44,7 @@ export default function LoginPage() {
             color: 'var(--text)',
             lineHeight: 1,
           }}>
-            BRUSSAI <span style={{ color: 'var(--silver)' }}>COACH</span>
+            ELITE <span style={{ color: 'var(--silver)' }}>ACTION</span>
           </div>
           <div style={{
             width: 60,

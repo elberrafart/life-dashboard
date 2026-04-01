@@ -17,17 +17,14 @@ export default function AuthCallbackPage() {
         const params = new URLSearchParams(hash)
         const accessToken = params.get('access_token')
         const refreshToken = params.get('refresh_token')
-        const type = params.get('type') // 'invite' | 'recovery' | 'magiclink'
+        const hashType = params.get('type')
 
         if (accessToken && refreshToken) {
           const result = await setSessionFromTokens(accessToken, refreshToken)
           if (result.error) { setError(result.error); return }
 
-          if (type === 'recovery' || type === 'invite') {
-            router.replace('/update-password')
-          } else {
-            router.replace('/')
-          }
+          const needsPassword = result.isRecovery || hashType === 'recovery' || hashType === 'invite'
+          router.replace(needsPassword ? '/update-password' : '/')
           return
         }
       }
@@ -37,12 +34,11 @@ export default function AuthCallbackPage() {
       if (code) {
         const result = await exchangeCode(code)
         if (result.error) { setError(result.error); return }
-        const codeType = query.get('type')
-        if (codeType === 'recovery' || codeType === 'invite') {
-          router.replace('/update-password')
-        } else {
-          router.replace('/')
-        }
+
+        // Prefer AMR-based detection; fall back to type query param
+        const queryType = query.get('type')
+        const needsPassword = result.isRecovery || queryType === 'recovery' || queryType === 'invite'
+        router.replace(needsPassword ? '/update-password' : '/')
         return
       }
 
@@ -53,11 +49,8 @@ export default function AuthCallbackPage() {
         const result = await verifyOtp(tokenHash, type)
         if (result.error) { setError(result.error); return }
 
-        if (type === 'recovery' || type === 'invite') {
-          router.replace('/update-password')
-        } else {
-          router.replace('/')
-        }
+        const needsPassword = result.isRecovery || type === 'recovery' || type === 'invite'
+        router.replace(needsPassword ? '/update-password' : '/')
         return
       }
 

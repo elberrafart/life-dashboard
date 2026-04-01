@@ -10,8 +10,8 @@ import React, {
   ReactNode,
 } from 'react'
 import { AppState, Goal, Habit, KanbanCard, XPEvent, getLevelInfo } from './types'
-import { loadState, saveState, getTodayKey } from './store'
-import { syncProfile } from '@/app/actions/profiles'
+import { loadState, saveState, loadImages, getTodayKey } from './store'
+import { syncProfile, loadUserState } from '@/app/actions/profiles'
 
 export type FloatingXPItem = { id: string; xp: number; x: number; y: number }
 
@@ -22,6 +22,10 @@ type Action =
   | { type: 'ADD_GOAL'; payload: Goal }
   | { type: 'UPDATE_GOAL'; payload: Goal }
   | { type: 'DELETE_GOAL'; payload: string }
+  | { type: 'ARCHIVE_GOAL'; payload: string }
+  | { type: 'ARCHIVE_KANBAN'; payload: string }
+  | { type: 'RESTORE_GOAL'; payload: string }
+  | { type: 'RESTORE_KANBAN'; payload: string }
   | { type: 'ADD_HABIT'; payload: Habit }
   | { type: 'UPDATE_HABIT'; payload: Habit }
   | { type: 'DELETE_HABIT'; payload: string }
@@ -67,6 +71,42 @@ function reducer(state: AppState, action: Action): AppState {
     case 'ADD_GOAL': return { ...state, goals: [...state.goals, action.payload] }
     case 'UPDATE_GOAL': return { ...state, goals: state.goals.map(g => g.id === action.payload.id ? action.payload : g) }
     case 'DELETE_GOAL': return { ...state, goals: state.goals.filter(g => g.id !== action.payload) }
+    case 'ARCHIVE_GOAL': {
+      const goal = state.goals.find(g => g.id === action.payload)
+      if (!goal) return state
+      return {
+        ...state,
+        goals: state.goals.filter(g => g.id !== action.payload),
+        goalArchive: [...(state.goalArchive ?? []), { ...goal, archivedAt: new Date().toISOString() }],
+      }
+    }
+    case 'ARCHIVE_KANBAN': {
+      const card = state.kanban.find(k => k.id === action.payload)
+      if (!card) return state
+      return {
+        ...state,
+        kanban: state.kanban.filter(k => k.id !== action.payload),
+        kanbanArchive: [...(state.kanbanArchive ?? []), card],
+      }
+    }
+    case 'RESTORE_GOAL': {
+      const goal = (state.goalArchive ?? []).find(g => g.id === action.payload)
+      if (!goal) return state
+      return {
+        ...state,
+        goals: [...state.goals, { ...goal, archivedAt: undefined }],
+        goalArchive: (state.goalArchive ?? []).filter(g => g.id !== action.payload),
+      }
+    }
+    case 'RESTORE_KANBAN': {
+      const card = (state.kanbanArchive ?? []).find(k => k.id === action.payload)
+      if (!card) return state
+      return {
+        ...state,
+        kanban: [...state.kanban, { ...card, column: 'todo' as const, xpAwarded: false, completedAt: undefined }],
+        kanbanArchive: (state.kanbanArchive ?? []).filter(k => k.id !== action.payload),
+      }
+    }
     case 'ADD_HABIT': return { ...state, habits: [...state.habits, action.payload] }
     case 'UPDATE_HABIT': return { ...state, habits: state.habits.map(h => h.id === action.payload.id ? action.payload : h) }
     case 'DELETE_HABIT': return { ...state, habits: state.habits.filter(h => h.id !== action.payload) }
@@ -161,6 +201,8 @@ const PLACEHOLDER_STATE: AppState = {
   habitXP: 0,
   journalEntries: {},
   moodLog: {},
+  goalArchive: [],
+  kanbanArchive: [],
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -170,11 +212,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [floatingXPs, setFloatingXPs] = useState<FloatingXPItem[]>([])
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Load from localStorage on mount
+  // Load state on mount: localStorage first (instant), then DB (authoritative)
   useEffect(() => {
-    const s = loadState()
-    dispatch({ type: 'SET_STATE', payload: s })
-    setLoaded(true)
+    const localState = loadState()
+    dispatch({ type: 'SET_STATE', payload: localState })
+
+    loadUserState().then(({ state: dbState, images: dbImages }) => {
+      if (dbState) {
+        // DB is the source of truth — merge images from both DB and localStorage
+        const localImages = loadImages()
+        const mergedGoals = (dbState.goals ?? []).map(g => ({
+          ...g,
+          visionImageBase64: dbImages?.[g.id] ?? localImages[g.id] ?? g.visionImageBase64,
+        }))
+        dispatch({
+          type: 'SET_STATE',
+          payload: {
+            ...PLACEHOLDER_STATE,
+            ...dbState,
+            goalArchive: dbState.goalArchive ?? [],
+            kanbanArchive: dbState.kanbanArchive ?? [],
+            goals: mergedGoals,
+          },
+        })
+      }
+    }).catch(() => {/* DB unavailable — localStorage is fine */}).finally(() => {
+      setLoaded(true)
+    })
   }, [])
 
   // Autosave — triggers immediately on any action (100ms debounce to batch rapid changes)
@@ -186,8 +250,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       saveState(state)
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 1200)
-      // Sync key metrics to Supabase for coach visibility
+      // Sync full state + key metrics to Supabase
       const totalXP = state.goals.reduce((s, g) => s + g.xp, 0) + (state.habitXP ?? 0)
+      const visionImages: Record<string, string> = {}
+      const goalsWithoutImages = state.goals.map(({ visionImageBase64, ...rest }) => {
+        if (visionImageBase64) visionImages[rest.id] = visionImageBase64
+        return rest
+      })
+      const appStateForDB = { ...state, goals: goalsWithoutImages }
       syncProfile({
         displayName: state.playerName,
         xpTotal: totalXP,
@@ -196,6 +266,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         habits: state.habits.map(h => ({ id: h.id, label: h.label })),
         journalDates: Object.keys(state.journalEntries ?? {}).filter(d => state.journalEntries[d]),
         kanbanDone: state.kanban.filter(k => k.column === 'done').length,
+        appState: appStateForDB as Parameters<typeof syncProfile>[0]['appState'],
+        visionImages,
       }).catch(() => {/* silently ignore sync failures */})
     }, 100)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }

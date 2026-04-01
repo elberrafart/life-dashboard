@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '@/lib/context'
 import Header from '@/components/Header'
-import TodayBar from '@/components/TodayBar'
 import VisionBoard from '@/components/VisionBoard'
 import GoalsGrid from '@/components/GoalsGrid'
 import HabitsTracker from '@/components/HabitsTracker'
@@ -16,8 +15,110 @@ import DailyJournal from '@/components/DailyJournal'
 import ProfileCard from '@/components/ProfileCard'
 import CheckIn from '@/components/CheckIn'
 import { getOnboardingStatus } from '@/app/actions/onboarding'
+import { KanbanCard, Goal } from '@/lib/types'
 
 export type Tab = 'vision' | 'goals' | 'habits' | 'board' | 'journal'
+
+const PRIORITY_COLOR: Record<string, string> = {
+  high: 'var(--red)', medium: 'var(--gold)', low: 'var(--green)',
+}
+
+function KanbanArchiveSection({ cards, onRestore }: { cards: KanbanCard[]; onRestore: (id: string) => void }) {
+  const [open, setOpen] = useState(false)
+  if (cards.length === 0) return null
+  return (
+    <div style={{ marginTop: 16 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer',
+          fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', display: 'flex',
+          alignItems: 'center', gap: 8, padding: 0, fontFamily: 'var(--font-dm)',
+        }}
+      >
+        <span>{open ? '▾' : '▸'}</span>
+        Archive ({cards.length})
+      </button>
+      {open && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {cards.map(card => (
+            <div key={card.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 12px', border: '1px solid var(--border)',
+              borderLeft: `3px solid ${PRIORITY_COLOR[card.priority] ?? 'var(--border)'}`,
+              borderRadius: 8, background: 'var(--surface)', opacity: 0.7,
+            }}>
+              <span style={{ flex: 1, fontSize: 12, color: 'var(--text2)', textDecoration: 'line-through' }}>{card.name}</span>
+              {card.completedAt && (
+                <span style={{ fontSize: 10, color: 'var(--text3)' }}>
+                  {new Date(card.completedAt).toLocaleDateString()}
+                </span>
+              )}
+              <button
+                onClick={() => onRestore(card.id)}
+                style={{
+                  background: 'none', border: '1px solid var(--border2)', borderRadius: 6,
+                  color: 'var(--text3)', fontSize: 10, padding: '3px 8px',
+                  cursor: 'pointer', letterSpacing: 1, fontFamily: 'var(--font-dm)',
+                }}
+              >Restore</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function GoalArchiveSection({ goals, onRestore }: { goals: Goal[]; onRestore: (id: string) => void }) {
+  const [open, setOpen] = useState(false)
+  if (goals.length === 0) return null
+  return (
+    <div style={{ marginTop: 16 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer',
+          fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', display: 'flex',
+          alignItems: 'center', gap: 8, padding: 0, fontFamily: 'var(--font-dm)',
+        }}
+      >
+        <span>{open ? '▾' : '▸'}</span>
+        Archived Goals ({goals.length})
+      </button>
+      {open && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {goals.map(goal => (
+            <div key={goal.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 14px', border: '1px solid var(--border)',
+              borderRadius: 8, background: 'var(--surface)', opacity: 0.7,
+            }}>
+              <span style={{ fontSize: 20 }}>{goal.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: 'var(--text2)', textDecoration: 'line-through' }}>{goal.name}</div>
+                {goal.category && <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1 }}>{goal.category}</div>}
+              </div>
+              {goal.archivedAt && (
+                <span style={{ fontSize: 10, color: 'var(--text3)' }}>
+                  {new Date(goal.archivedAt).toLocaleDateString()}
+                </span>
+              )}
+              <button
+                onClick={() => onRestore(goal.id)}
+                style={{
+                  background: 'none', border: '1px solid var(--border2)', borderRadius: 6,
+                  color: 'var(--text3)', fontSize: 10, padding: '3px 8px',
+                  cursor: 'pointer', letterSpacing: 1, fontFamily: 'var(--font-dm)',
+                }}
+              >Restore</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function SectionHeading({ children }: { children: string }) {
   return (
@@ -66,6 +167,7 @@ function ResetButton() {
 }
 
 export default function Page() {
+  const { state, dispatch } = useApp()
   const [feedOpen, setFeedOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -74,6 +176,14 @@ export default function Page() {
       if (!complete) window.location.replace('/setup')
     })
   }, [])
+
+  function restoreKanban(id: string) {
+    dispatch({ type: 'RESTORE_KANBAN', payload: id })
+  }
+
+  function restoreGoal(id: string) {
+    dispatch({ type: 'RESTORE_GOAL', payload: id })
+  }
 
   return (
     <div style={{ minHeight: '100dvh' }}>
@@ -93,10 +203,6 @@ export default function Page() {
           <VisionBoard />
         </section>
 
-        <div style={{ padding: '0 20px' }}>
-          <TodayBar />
-        </div>
-
         {/* Daily Check-In */}
         <section style={{ marginTop: 24, padding: '0 20px' }}>
           <SectionHeading>Coach Check-In</SectionHeading>
@@ -109,12 +215,20 @@ export default function Page() {
         </section>
         <div style={{ padding: '0 20px' }}>
           <KanbanBoard />
+          <KanbanArchiveSection
+            cards={state.kanbanArchive ?? []}
+            onRestore={restoreKanban}
+          />
         </div>
 
         {/* Goals */}
         <section style={{ marginTop: 40, padding: '0 20px' }}>
           <SectionHeading>Goals</SectionHeading>
           <GoalsGrid />
+          <GoalArchiveSection
+            goals={state.goalArchive ?? []}
+            onRestore={restoreGoal}
+          />
         </section>
 
         {/* Habits + Journal */}

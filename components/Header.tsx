@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useApp } from '@/lib/context'
 import { getLevelInfo } from '@/lib/types'
 import { logout } from '@/app/actions/auth'
@@ -79,7 +80,7 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
         {/* Drawer header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 20, letterSpacing: 3, color: 'var(--text)' }}>
-            LIFE <span style={{ color: 'var(--silver)' }}>OS</span>
+            ELITE <span style={{ color: 'var(--silver)' }}>ACTION</span>
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
@@ -140,15 +141,18 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           <span style={{ fontSize: 18 }}>⚙️</span> Settings
         </button>
 
+        <Link href="/leaderboard" style={drawerLinkStyle}>
+          <span style={{ fontSize: 18 }}>🏆</span> Leaderboard
+        </Link>
         {isAdmin && (
-          <a href="/admin/clients" style={drawerLinkStyle}>
+          <Link href="/admin/clients" style={drawerLinkStyle}>
             <span style={{ fontSize: 18 }}>👥</span> Clients
-          </a>
+          </Link>
         )}
         {isAdmin && (
-          <a href="/admin" style={drawerLinkStyle}>
+          <Link href="/admin" style={drawerLinkStyle}>
             <span style={{ fontSize: 18 }}>⚡</span> Admin Panel
-          </a>
+          </Link>
         )}
 
         {/* Autosave status */}
@@ -190,7 +194,7 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
       >
         {/* Logo */}
         <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 28, letterSpacing: 3, color: 'var(--text)', flexShrink: 0 }}>
-          LIFE <span style={{ color: 'var(--silver)' }}>OS</span>
+          ELITE <span style={{ color: 'var(--silver)' }}>ACTION</span>
           <div style={{ width: '30%', height: 2, background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: 2 }} />
         </div>
 
@@ -251,19 +255,24 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           <div style={{ fontSize: 11, letterSpacing: 1, color: 'var(--text3)', textTransform: 'uppercase' }}>{today}</div>
           <button onClick={onFeedOpen} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, padding: 8, borderRadius: 8, transition: 'color 150ms' }} title="XP Feed" onMouseOver={e => (e.currentTarget.style.color = 'var(--silver)')} onMouseOut={e => (e.currentTarget.style.color = 'var(--text3)')}>🔔</button>
           <button onClick={onSettingsOpen} style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--silver2)', fontSize: 20, padding: '7px 10px', borderRadius: 8, transition: 'all 150ms', lineHeight: 1 }} title="Settings" onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }} onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>⚙</button>
+          <Link href="/leaderboard" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)', textDecoration: 'none' }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>
+            🏆 Leaderboard
+          </Link>
           {isAdmin && (
-            <a href="/admin/clients" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)', textDecoration: 'none' }}
+            <Link href="/admin/clients" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)', textDecoration: 'none' }}
               onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
               onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>
               👥 Clients
-            </a>
+            </Link>
           )}
           {isAdmin && (
-            <a href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)', textDecoration: 'none' }}
+            <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)', textDecoration: 'none' }}
               onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
               onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>
               ⚡ Admin
-            </a>
+            </Link>
           )}
           <form action={logout}>
             <button type="submit" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)' }}
