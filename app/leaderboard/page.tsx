@@ -1,35 +1,26 @@
-'use client'
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getLeaderboard } from '@/app/actions/profiles'
 import { getLevelInfo } from '@/lib/types'
 
-type LeaderboardEntry = {
-  user_id: string
-  user_email: string
-  display_name: string | null
-  xp_total: number
-  streak: number
-  kanban_done: number
-  updated_at: string
-}
-
 const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
-export default function LeaderboardPage() {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export default async function LeaderboardPage() {
+  let entries: Awaited<ReturnType<typeof getLeaderboard>> = []
+  let error: string | null = null
 
-  useEffect(() => {
-    getLeaderboard()
-      .then(data => setEntries(data as LeaderboardEntry[]))
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load leaderboard'))
-      .finally(() => setLoading(false))
-  }, [])
+  try {
+    entries = await getLeaderboard()
+  } catch (e) {
+    error = e instanceof Error ? e.message : 'Failed to load leaderboard'
+  }
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px' }}>
+      <style>{`
+        .lb-home-btn:hover { border-color: var(--gold) !important; color: var(--gold) !important; }
+        .lb-row:hover { background: rgba(255,255,255,0.03) !important; }
+      `}</style>
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
         <div>
@@ -42,6 +33,7 @@ export default function LeaderboardPage() {
         </div>
         <Link
           href="/"
+          className="lb-home-btn"
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: 'var(--surface)', border: '1px solid var(--border)',
@@ -50,8 +42,6 @@ export default function LeaderboardPage() {
             textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
             transition: 'all 150ms', flexShrink: 0,
           }}
-          onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
-          onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
         >
           ← Home
         </Link>
@@ -63,11 +53,7 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {loading ? (
-        <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13, letterSpacing: 1 }}>
-          Loading…
-        </div>
-      ) : entries.length === 0 ? (
+      {entries.length === 0 && !error ? (
         <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.8 }}>
           No users yet.<br />
           <span style={{ fontSize: 11 }}>Check-in from your dashboard to appear here.</span>
@@ -92,6 +78,7 @@ export default function LeaderboardPage() {
             return (
               <div
                 key={entry.user_id}
+                className="lb-row"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '48px 1fr auto auto',
