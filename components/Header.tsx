@@ -12,11 +12,19 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
   const [editingName, setEditingName] = useState(false)
   const [nameVal, setNameVal] = useState(state.playerName)
   const [ranksOpen, setRanksOpen] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return sessionStorage.getItem('ea-is-admin') === '1'
+  })
   const [drawerOpen, setDrawerOpen] = useState(false)
   const levelInfo = getLevelInfo(totalXP, state.streak ?? 0)
 
-  useEffect(() => { checkIsAdmin().then(setIsAdmin) }, [])
+  useEffect(() => {
+    checkIsAdmin().then(result => {
+      setIsAdmin(result)
+      sessionStorage.setItem('ea-is-admin', result ? '1' : '0')
+    })
+  }, [])
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
 
