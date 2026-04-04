@@ -221,10 +221,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (dbState) {
         // DB is the source of truth — merge images from both DB and localStorage
         const localImages = loadImages()
-        const mergedGoals = (dbState.goals ?? []).map(g => ({
-          ...g,
-          visionImageBase64: dbImages?.[g.id] ?? localImages[g.id] ?? g.visionImageBase64,
-        }))
+        const localGoalMap = new Map((localState.goals ?? []).map(g => [g.id, g]))
+        const mergedGoals = (dbState.goals ?? []).map(g => {
+          const localGoal = localGoalMap.get(g.id)
+          // If local has more tasks than DB (e.g. DB sync failed), keep local tasks
+          const tasks = localGoal && localGoal.tasks.length > (g.tasks?.length ?? 0)
+            ? localGoal.tasks
+            : (g.tasks ?? [])
+          return {
+            ...g,
+            tasks,
+            visionImageBase64: dbImages?.[g.id] ?? localImages[g.id] ?? g.visionImageBase64,
+          }
+        })
         dispatch({
           type: 'SET_STATE',
           payload: {

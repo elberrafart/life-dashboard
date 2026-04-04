@@ -19,6 +19,8 @@ export async function syncProfile(data: {
   if (!user) return
 
   const supabase = createAdminClient()
+
+  // Save app state first (small payload — must not fail due to image size)
   await supabase.from('user_profiles').upsert(
     {
       user_id: user.id,
@@ -31,11 +33,18 @@ export async function syncProfile(data: {
       journal_dates: data.journalDates,
       kanban_done: data.kanbanDone,
       app_state: data.appState ?? null,
-      vision_images: data.visionImages ?? null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'user_id' }
   )
+
+  // Save vision images in a separate update — may be large, allowed to fail independently
+  if (data.visionImages && Object.keys(data.visionImages).length > 0) {
+    await supabase
+      .from('user_profiles')
+      .update({ vision_images: data.visionImages })
+      .eq('user_id', user.id)
+  }
 }
 
 export async function loadUserState(): Promise<{ state?: AppState; images?: Record<string, string> }> {
@@ -69,14 +78,14 @@ export type UserProfile = {
   updated_at: string
 }
 
-export async function getLeaderboard(): Promise<Pick<UserProfile, 'user_id' | 'user_email' | 'display_name' | 'xp_total' | 'streak' | 'kanban_done' | 'updated_at'>[]> {
+export async function getLeaderboard(): Promise<Pick<UserProfile, 'user_id' | 'display_name' | 'xp_total' | 'streak' | 'kanban_done' | 'updated_at'>[]> {
   const user = await getSessionUser()
   if (!user) throw new Error('Unauthorized')
 
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('user_id, user_email, display_name, xp_total, streak, kanban_done, updated_at')
+    .select('user_id, display_name, xp_total, streak, kanban_done, updated_at')
     .order('xp_total', { ascending: false })
     .limit(100)
 

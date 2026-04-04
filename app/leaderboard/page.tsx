@@ -71,7 +71,7 @@ export default async function LeaderboardPage() {
           {entries.map((entry, i) => {
             const rank = i + 1
             const level = getLevelInfo(entry.xp_total, entry.streak)
-            const name = entry.display_name || entry.user_email.split('@')[0]
+            const name = entry.display_name || 'Player'
             const medal = MEDAL[rank]
             const isTop3 = rank <= 3
 

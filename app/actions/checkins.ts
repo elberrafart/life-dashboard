@@ -24,6 +24,10 @@ export async function submitCheckIn(data: {
   const user = await getSessionUser()
   if (!user) throw new Error('Not authenticated')
 
+  if (data.note && data.note.length > 1000) throw new Error('Note too long')
+  if (typeof data.xpToday !== 'number' || data.xpToday < 0 || data.xpToday > 1_000_000) throw new Error('Invalid XP value')
+  if (typeof data.habitsCompleted !== 'number' || data.habitsCompleted < 0 || data.habitsCompleted > 1000) throw new Error('Invalid habits count')
+
   const supabase = createAdminClient()
   const today = new Date().toISOString().split('T')[0]
 
