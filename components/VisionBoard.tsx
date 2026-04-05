@@ -117,7 +117,6 @@ export default function VisionBoard() {
   return (
     <>
       <style>{`
-        @media (max-width: 640px) { .vision-grid { grid-template-columns: repeat(2,1fr) !important; } }
         .vision-card-overlay { opacity: 0; transition: opacity 200ms; pointer-events: none; }
         .vision-card:hover .vision-card-overlay,
         .vision-card.vc-active .vision-card-overlay { opacity: 1; pointer-events: auto; }
@@ -126,8 +125,12 @@ export default function VisionBoard() {
         .vision-card:hover .vision-img-controls,
         .vision-card.vc-active .vision-img-controls { opacity: 1; }
         @media (max-width: 640px) {
+          .vision-grid { grid-template-columns: 1fr !important; }
+          .vision-grid > * { grid-column: auto !important; }
+          .vision-card { aspect-ratio: auto !important; min-height: 180px !important; max-height: 260px !important; }
           .vision-img-controls { opacity: 1 !important; }
-          .vision-card-overlay.vc-mobile-hint { display: block; }
+          .vision-card-overlay { justify-content: flex-start !important; }
+          .vision-overlay-imgcontrols { display: none !important; }
         }
       `}</style>
 
@@ -294,7 +297,7 @@ export default function VisionBoard() {
 
                 {/* Image controls when image exists */}
                 {goal.visionImageBase64 && (
-                  <>
+                  <div className="vision-overlay-imgcontrols" style={{ display: 'contents' }}>
                     <div style={{ display: 'flex', gap: 5, width: '100%' }}>
                       <button
                         onClick={e => { e.stopPropagation(); zoomGoal(goal, 0.25) }}
@@ -316,7 +319,7 @@ export default function VisionBoard() {
                       Tap outside to pan &amp; drag image<br />
                       Use +/− to zoom · ↺ to reset
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {taskCount > 0 && (
