@@ -264,6 +264,13 @@ select option { background: var(--surface2); color: var(--text); }
   100% { transform: translate(var(--tx), var(--ty)) rotate(var(--r)); opacity: 0; }
 }
 
+/* Compact mode — reduces section gaps and card padding */
+html.compact main section { margin-top: 20px !important; }
+html.compact .card { padding: 14px 18px !important; }
+html.compact .profile-card-box { padding: 12px 16px !important; }
+html.compact .section-heading { margin-bottom: 8px !important; }
+html.compact .profile-layout { gap: 12px !important; }
+
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 .spin { animation: spin 1s linear infinite; }
 

@@ -12,6 +12,7 @@ import React, {
 import { AppState, Goal, Habit, KanbanCard, XPEvent, getLevelInfo } from './types'
 import { loadState, saveState, loadImages, getTodayKey } from './store'
 import { syncProfile, loadUserState } from '@/app/actions/profiles'
+import { initTheme } from './theme'
 
 export type FloatingXPItem = { id: string; xp: number; x: number; y: number }
 
@@ -42,6 +43,7 @@ type Action =
   | { type: 'RESET_XP' }
   | { type: 'SAVE_JOURNAL'; payload: { date: string; text: string } }
   | { type: 'SAVE_MOOD'; payload: { date: string; mood: string } }
+  | { type: 'SET_HIDE_FROM_LEADERBOARD'; payload: boolean }
 
 type AppContextType = {
   state: AppState
@@ -179,6 +181,7 @@ function reducer(state: AppState, action: Action): AppState {
         moodLog: { ...(state.moodLog ?? {}), [date]: current === mood ? '' : mood },
       }
     }
+    case 'SET_HIDE_FROM_LEADERBOARD': return { ...state, hideFromLeaderboard: action.payload }
     default: return state
   }
 }
@@ -203,6 +206,7 @@ const PLACEHOLDER_STATE: AppState = {
   moodLog: {},
   goalArchive: [],
   kanbanArchive: [],
+  hideFromLeaderboard: false,
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -214,6 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Load state on mount: localStorage first (instant), then DB (authoritative)
   useEffect(() => {
+    initTheme()
     const localState = loadState()
     dispatch({ type: 'SET_STATE', payload: localState })
 

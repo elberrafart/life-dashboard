@@ -85,12 +85,16 @@ export async function getLeaderboard(): Promise<Pick<UserProfile, 'user_id' | 'd
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('user_id, display_name, xp_total, streak, kanban_done, updated_at')
+    .select('user_id, display_name, xp_total, streak, kanban_done, updated_at, app_state')
     .order('xp_total', { ascending: false })
-    .limit(100)
+    .limit(120)
 
   if (error) throw new Error(error.message)
-  return data ?? []
+
+  return (data ?? [])
+    .filter(e => !(e.app_state as Record<string, unknown>)?.hideFromLeaderboard)
+    .slice(0, 100)
+    .map(({ app_state: _, ...rest }) => rest)
 }
 
 export async function getAllProfiles(): Promise<UserProfile[]> {

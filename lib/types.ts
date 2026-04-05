@@ -66,6 +66,7 @@ export type AppState = {
   moodLog: Record<string, string>
   goalArchive: Goal[]
   kanbanArchive: KanbanCard[]
+  hideFromLeaderboard?: boolean
 }
 
 export type Level = {

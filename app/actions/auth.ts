@@ -1,5 +1,5 @@
 'use server'
-import { createClient } from '@/lib/supabase-server'
+import { createClient, getSessionUser } from '@/lib/supabase-server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
@@ -54,6 +54,23 @@ export async function logout() {
   const supabase = await createClient()
   await supabase.auth.signOut()
   redirect('/login')
+}
+
+export async function sendSelfPasswordReset(): Promise<{ error?: string; success?: string }> {
+  const user = await getSessionUser()
+  if (!user?.email) return { error: 'Not authenticated' }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
+  const supabase = createSupabaseClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+  const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+    redirectTo: `${siteUrl}/auth/callback?type=recovery`,
+  })
+  if (error) return { error: error.message }
+  return { success: `Reset link sent to ${user.email}` }
 }
 
 export async function updatePassword(_state: UpdatePasswordState, formData: FormData): Promise<UpdatePasswordState> {
