@@ -66,8 +66,18 @@ export default function ProfileCard() {
 
   return (
     <div style={{ padding: '20px 20px 0' }}>
-      <div className="card" style={{ padding: '22px 28px', position: 'relative' }}>
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      <style>{`
+        .profile-card-box { padding: 22px 28px; }
+        .profile-layout { display: flex; gap: 20px; align-items: flex-start; }
+        .profile-stats { flex-shrink: 0; min-width: 180px; max-width: 260px; }
+        @media (max-width: 640px) {
+          .profile-card-box { padding: 16px 18px !important; }
+          .profile-layout { flex-direction: column; gap: 14px; }
+          .profile-stats { min-width: 0; max-width: none; width: 100%; }
+        }
+      `}</style>
+      <div className="card profile-card-box" style={{ position: 'relative' }}>
+        <div className="profile-layout">
 
           {/* Left: name + tagline + level */}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -100,7 +110,7 @@ export default function ProfileCard() {
           </div>
 
           {/* Right: date + habits bar + streak */}
-          <div style={{ flexShrink: 0, minWidth: 180, maxWidth: 260, width: '100%' }}>
+          <div className="profile-stats">
             <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 8 }}>
               {today}
             </div>

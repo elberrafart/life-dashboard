@@ -49,10 +49,12 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
       <style>{`
         .header-hide-mobile { display: flex; }
         .header-show-mobile { display: none; }
+        .header-logo-text { font-size: 28px; }
         @media (max-width: 768px) {
           .header-hide-mobile { display: none !important; }
           .header-show-mobile { display: flex !important; }
-          .header-padding { padding: 12px 16px !important; }
+          .header-padding { padding: 12px 16px !important; gap: 12px !important; }
+          .header-logo-text { font-size: 20px; letter-spacing: 2px; }
         }
         .nav-drawer {
           transform: translateX(100%);
@@ -201,7 +203,7 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
         }}
       >
         {/* Logo */}
-        <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 28, letterSpacing: 3, color: 'var(--text)', flexShrink: 0 }}>
+        <div className="header-logo-text" style={{ fontFamily: 'var(--font-bebas)', letterSpacing: 3, color: 'var(--text)', flexShrink: 0 }}>
           ELITE <span style={{ color: 'var(--silver)' }}>ACTION</span>
           <div style={{ width: '30%', height: 2, background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: 2 }} />
         </div>
