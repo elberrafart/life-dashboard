@@ -40,7 +40,7 @@ export default function GoalsGrid() {
 
   return (
     <>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="goals-list" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {state.goals.map(goal => {
           const completedTasks = goal.tasks.filter(t => !!state.checked[`${todayKey}_t_${t.id}`]).length
           const totalTasks = goal.tasks.length
@@ -79,6 +79,7 @@ export default function GoalsGrid() {
                 return (
                   <div
                     key={task.id}
+                    className="task-row"
                     onClick={e => handleToggleTask(goal, task, e)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10,

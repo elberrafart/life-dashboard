@@ -77,7 +77,7 @@ export default function HabitsTracker() {
       </div>
 
       {/* Habit list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+      <div className="habits-list" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
         {state.habits.map(habit => {
           const key = `${todayKey}_h_${habit.id}`
           const checked = !!state.checked[key]
@@ -118,6 +118,7 @@ export default function HabitsTracker() {
           return (
             <div
               key={habit.id}
+              className="habit-row"
               onClick={e => handleToggle(habit, e)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,

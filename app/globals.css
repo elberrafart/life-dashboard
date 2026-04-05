@@ -264,12 +264,16 @@ select option { background: var(--surface2); color: var(--text); }
   100% { transform: translate(var(--tx), var(--ty)) rotate(var(--r)); opacity: 0; }
 }
 
-/* Compact mode — reduces section gaps and card padding */
-html.compact main section { margin-top: 20px !important; }
-html.compact .card { padding: 14px 18px !important; }
-html.compact .profile-card-box { padding: 12px 16px !important; }
-html.compact .section-heading { margin-bottom: 8px !important; }
-html.compact .profile-layout { gap: 12px !important; }
+/* Compact mode — meaningfully tighter spacing throughout */
+html.compact main section { margin-top: 16px !important; }
+html.compact .card { padding: 10px 14px !important; }
+html.compact .profile-card-box { padding: 10px 14px !important; }
+html.compact .section-heading { margin-bottom: 6px !important; }
+html.compact .profile-layout { gap: 10px !important; }
+html.compact .goals-list { gap: 6px !important; }
+html.compact .habits-list { gap: 3px !important; }
+html.compact .habit-row { padding: 6px 10px !important; min-height: 36px !important; }
+html.compact .task-row { padding: 6px 10px !important; min-height: 36px !important; margin-bottom: 3px !important; }
 
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 .spin { animation: spin 1s linear infinite; }
