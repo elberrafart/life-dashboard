@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { useApp } from '@/lib/context'
 import { getTodayKey } from '@/lib/store'
 
@@ -36,7 +37,6 @@ export default function DailyJournal() {
   const { state, dispatch } = useApp()
   const todayKey = getTodayKey()
   const [text, setText] = useState('')
-  const [showHistory, setShowHistory] = useState(false)
   const [saved, setSaved] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -64,11 +64,6 @@ export default function DailyJournal() {
   const prompt = getDailyPrompt()
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 
-  const pastEntries = Object.entries(state.journalEntries ?? {})
-    .filter(([date, t]) => date !== todayKey && t.trim().length > 0)
-    .sort(([a], [b]) => b.localeCompare(a))
-    .slice(0, 7)
-
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length
 
   return (
@@ -88,18 +83,17 @@ export default function DailyJournal() {
                 ✓ Saved
               </span>
             )}
-            {pastEntries.length > 0 && (
-              <button
-                onClick={() => setShowHistory(!showHistory)}
-                style={{
-                  background: 'none', border: '1px solid var(--border)', borderRadius: 6,
-                  color: 'var(--text3)', padding: '4px 10px', fontSize: 10, letterSpacing: 1,
-                  textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-dm)',
-                }}
-              >
-                {showHistory ? 'Hide' : 'History'}
-              </button>
-            )}
+            <Link
+              href="/journal"
+              style={{
+                background: 'none', border: '1px solid var(--border)', borderRadius: 6,
+                color: 'var(--text3)', padding: '4px 10px', fontSize: 10, letterSpacing: 1,
+                textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-dm)',
+                textDecoration: 'none',
+              }}
+            >
+              View All
+            </Link>
           </div>
         </div>
 
@@ -185,46 +179,6 @@ export default function DailyJournal() {
         </div>
       </div>
 
-      {/* Past entries */}
-      {showHistory && pastEntries.length > 0 && (
-        <div className="card" style={{ padding: '20px 22px' }}>
-          <div style={{ fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 16 }}>
-            Past Entries
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {pastEntries.map(([date, entryText]) => {
-              const d = new Date(date + 'T00:00:00')
-              const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-              const preview = entryText.trim().slice(0, 120) + (entryText.length > 120 ? '…' : '')
-              const mood = state.moodLog?.[date]
-              const moodData = mood ? MOODS.find(m => m.key === mood) : null
-              return (
-                <div
-                  key={date}
-                  style={{
-                    padding: '12px 14px',
-                    background: 'var(--surface2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1, textTransform: 'uppercase' }}>
-                      {label}
-                    </div>
-                    {moodData && (
-                      <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                        {moodData.emoji} {moodData.label}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6 }}>{preview}</div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
