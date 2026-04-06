@@ -77,7 +77,9 @@ export default function JournalPage() {
       <div style={{ borderBottom: '1px solid var(--border)', padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 16 }}>
         <Link
           href="/"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 16px', color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600, textDecoration: 'none' }}
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 16px', color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600, textDecoration: 'none', transition: 'color 150ms, border-color 150ms' }}
+          onMouseOver={e => { e.currentTarget.style.color = 'var(--gold)'; e.currentTarget.style.borderColor = 'var(--gold)' }}
+          onMouseOut={e => { e.currentTarget.style.color = 'var(--text3)'; e.currentTarget.style.borderColor = 'var(--border)' }}
         >
           ← Dashboard
         </Link>

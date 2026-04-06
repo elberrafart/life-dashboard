@@ -89,8 +89,10 @@ export default function DailyJournal() {
                 background: 'none', border: '1px solid var(--border)', borderRadius: 6,
                 color: 'var(--text3)', padding: '4px 10px', fontSize: 10, letterSpacing: 1,
                 textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-dm)',
-                textDecoration: 'none',
+                textDecoration: 'none', transition: 'color 150ms, border-color 150ms',
               }}
+              onMouseOver={e => { e.currentTarget.style.color = 'var(--gold)'; e.currentTarget.style.borderColor = 'var(--gold)' }}
+              onMouseOut={e => { e.currentTarget.style.color = 'var(--text3)'; e.currentTarget.style.borderColor = 'var(--border)' }}
             >
               View All
             </Link>
