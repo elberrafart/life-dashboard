@@ -111,6 +111,68 @@ export async function getAllProfiles(): Promise<UserProfile[]> {
   return data ?? []
 }
 
+export async function adminGetUserAppState(userId: string): Promise<AppState | null> {
+  const isAdmin = await checkIsAdmin()
+  if (!isAdmin) throw new Error('Unauthorized')
+
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('app_state')
+    .eq('user_id', userId)
+    .single()
+
+  return (data?.app_state as AppState) ?? null
+}
+
+export async function adminSetUserLists(
+  userId: string,
+  patch: {
+    habits?: AppState['habits']
+    goals?: AppState['goals']
+    kanban?: AppState['kanban']
+  }
+): Promise<{ error?: string }> {
+  const isAdmin = await checkIsAdmin()
+  if (!isAdmin) throw new Error('Unauthorized')
+
+  const supabase = createAdminClient()
+
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('app_state')
+    .eq('user_id', userId)
+    .single()
+
+  const current = (data?.app_state as AppState) ?? {}
+  const updated: AppState = {
+    ...current,
+    ...(patch.habits !== undefined && { habits: patch.habits }),
+    ...(patch.goals !== undefined && { goals: patch.goals }),
+    ...(patch.kanban !== undefined && { kanban: patch.kanban }),
+  } as AppState
+
+  // Update app_state and the denormalized summary columns
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({
+      app_state: updated,
+      ...(patch.goals !== undefined && {
+        goals: patch.goals.map(g => ({
+          id: g.id, name: g.name, emoji: g.emoji,
+          category: g.category, xp: g.xp, taskCount: g.tasks.length,
+        })),
+      }),
+      ...(patch.habits !== undefined && {
+        habits: patch.habits.map(h => ({ id: h.id, label: h.label })),
+      }),
+    })
+    .eq('user_id', userId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
 export async function getProfileCheckIns(userId: string) {
   const isAdmin = await checkIsAdmin()
   if (!isAdmin) throw new Error('Unauthorized')
