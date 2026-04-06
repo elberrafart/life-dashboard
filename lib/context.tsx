@@ -209,7 +209,7 @@ const PLACEHOLDER_STATE: AppState = {
   hideFromLeaderboard: false,
 }
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({ children, userId }: { children: ReactNode; userId?: string }) {
   const [state, dispatch] = useReducer(reducer, PLACEHOLDER_STATE)
   const [loaded, setLoaded] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -219,13 +219,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Load state on mount: localStorage first (instant), then DB (authoritative)
   useEffect(() => {
     initTheme()
-    const localState = loadState()
+    const localState = loadState(userId)
     dispatch({ type: 'SET_STATE', payload: localState })
 
     loadUserState().then(({ state: dbState, images: dbImages }) => {
       if (dbState) {
         // DB is the source of truth — merge images from both DB and localStorage
-        const localImages = loadImages()
+        const localImages = loadImages(userId)
         const localGoalMap = new Map((localState.goals ?? []).map(g => [g.id, g]))
         const mergedGoals = (dbState.goals ?? []).map(g => {
           const localGoal = localGoalMap.get(g.id)
@@ -261,7 +261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSaveStatus('saving')
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
-      saveState(state)
+      saveState(state, userId)
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 1200)
       // Sync full state + key metrics to Supabase

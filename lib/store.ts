@@ -1,25 +1,29 @@
 import { AppState } from './types'
 
-const STORAGE_KEY = 'life-dashboard-v5'
-const IMAGE_STORAGE_KEY = 'elite-action-images-v1'
+function storageKey(userId?: string) {
+  return userId ? `life-dashboard-v5-${userId}` : 'life-dashboard-v5'
+}
+function imageStorageKey(userId?: string) {
+  return userId ? `elite-action-images-v1-${userId}` : 'elite-action-images-v1'
+}
 
-function saveImages(goals: AppState['goals']): void {
+function saveImages(goals: AppState['goals'], userId?: string): void {
   if (typeof window === 'undefined') return
   try {
     const images: Record<string, string> = {}
     for (const goal of goals) {
       if (goal.visionImageBase64) images[goal.id] = goal.visionImageBase64
     }
-    localStorage.setItem(IMAGE_STORAGE_KEY, JSON.stringify(images))
+    localStorage.setItem(imageStorageKey(userId), JSON.stringify(images))
   } catch {
     // quota exceeded
   }
 }
 
-export function loadImages(): Record<string, string> {
+export function loadImages(userId?: string): Record<string, string> {
   if (typeof window === 'undefined') return {}
   try {
-    const raw = localStorage.getItem(IMAGE_STORAGE_KEY)
+    const raw = localStorage.getItem(imageStorageKey(userId))
     return raw ? (JSON.parse(raw) as Record<string, string>) : {}
   } catch {
     return {}
@@ -103,10 +107,10 @@ export const DEFAULT_STATE: AppState = {
   moodLog: {},
 }
 
-export function loadState(): AppState {
+export function loadState(userId?: string): AppState {
   if (typeof window === 'undefined') return DEFAULT_STATE
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(storageKey(userId))
     if (!raw) return DEFAULT_STATE
     const parsed = JSON.parse(raw) as Partial<AppState>
     const merged = { ...DEFAULT_STATE, ...parsed }
@@ -115,7 +119,7 @@ export function loadState(): AppState {
       merged.kanban = DEFAULT_STATE.kanban
     }
     // Merge images stored separately (prefer separate key; fall back to embedded for old data)
-    const images = loadImages()
+    const images = loadImages(userId)
     merged.goals = merged.goals.map(g => ({
       ...g,
       visionImageBase64: images[g.id] ?? g.visionImageBase64,
@@ -139,16 +143,16 @@ export function loadState(): AppState {
   }
 }
 
-export function saveState(state: AppState): void {
+export function saveState(state: AppState, userId?: string): void {
   if (typeof window === 'undefined') return
   // Save images separately to avoid hitting the main-state quota limit
-  saveImages(state.goals)
+  saveImages(state.goals, userId)
   try {
     const stateWithoutImages = {
       ...state,
       goals: state.goals.map(({ visionImageBase64: _, ...rest }) => rest),
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateWithoutImages))
+    localStorage.setItem(storageKey(userId), JSON.stringify(stateWithoutImages))
   } catch {
     // storage full or unavailable
   }

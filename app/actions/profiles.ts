@@ -1,6 +1,6 @@
 'use server'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { getSessionUser } from '@/lib/supabase-server'
+import { createClient, getSessionUser } from '@/lib/supabase-server'
 import { checkIsAdmin } from './admin'
 import { AppState } from '@/lib/types'
 
@@ -18,7 +18,7 @@ export async function syncProfile(data: {
   const user = await getSessionUser()
   if (!user) return
 
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   // Save app state first (small payload — must not fail due to image size)
   await supabase.from('user_profiles').upsert(
@@ -51,7 +51,7 @@ export async function loadUserState(): Promise<{ state?: AppState; images?: Reco
   const user = await getSessionUser()
   if (!user) return {}
 
-  const supabase = createAdminClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('user_profiles')
     .select('app_state, vision_images')

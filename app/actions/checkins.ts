@@ -1,6 +1,6 @@
 'use server'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { getSessionUser } from '@/lib/supabase-server'
+import { createClient, getSessionUser } from '@/lib/supabase-server'
 import { checkIsAdmin } from './admin'
 
 export type CheckIn = {
@@ -28,7 +28,7 @@ export async function submitCheckIn(data: {
   if (typeof data.xpToday !== 'number' || data.xpToday < 0 || data.xpToday > 1_000_000) throw new Error('Invalid XP value')
   if (typeof data.habitsCompleted !== 'number' || data.habitsCompleted < 0 || data.habitsCompleted > 1000) throw new Error('Invalid habits count')
 
-  const supabase = createAdminClient()
+  const supabase = await createClient()
   const today = new Date().toISOString().split('T')[0]
 
   const { error } = await supabase.from('check_ins').upsert(
@@ -51,7 +51,7 @@ export async function getTodayCheckIn(): Promise<CheckIn | null> {
   const user = await getSessionUser()
   if (!user) return null
 
-  const supabase = createAdminClient()
+  const supabase = await createClient()
   const today = new Date().toISOString().split('T')[0]
 
   const { data } = await supabase
@@ -68,7 +68,7 @@ export async function getUserCheckIns(): Promise<CheckIn[]> {
   const user = await getSessionUser()
   if (!user) return []
 
-  const supabase = createAdminClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('check_ins')
     .select('*')
