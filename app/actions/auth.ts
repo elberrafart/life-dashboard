@@ -1,11 +1,17 @@
 'use server'
 import { createClient, getSessionUser } from '@/lib/supabase-server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase-admin'
+import { rateLimit } from '@/lib/rate-limit'
 import { redirect } from 'next/navigation'
 
 export type LoginState = { error?: string } | undefined
 export type UpdatePasswordState = { error?: string; success?: string } | undefined
 export type ResetPasswordState = { error?: string; success?: string } | undefined
+
+// Rate limit: 5 login attempts per email per 15 minutes
+const LOGIN_LIMIT = { maxAttempts: 5, windowMs: 15 * 60 * 1000 }
+// Rate limit: 3 password reset requests per email per 15 minutes
+const RESET_LIMIT = { maxAttempts: 3, windowMs: 15 * 60 * 1000 }
 
 export async function login(_state: LoginState, formData: FormData): Promise<LoginState> {
   const email = formData.get('email') as string
@@ -13,6 +19,11 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
 
   if (!email || !password) {
     return { error: 'Email and password are required.' }
+  }
+
+  const { allowed } = rateLimit(`login:${email.toLowerCase().trim()}`, LOGIN_LIMIT)
+  if (!allowed) {
+    return { error: 'Too many login attempts. Please try again later.' }
   }
 
   const supabase = await createClient()
@@ -35,13 +46,13 @@ export async function resetPassword(_state: ResetPasswordState, formData: FormDa
     return { error: 'Please enter a valid email address.' }
   }
 
+  const { allowed } = rateLimit(`reset:${email}`, RESET_LIMIT)
+  if (!allowed) {
+    return { error: 'Too many reset requests. Please try again later.' }
+  }
+
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
-  // Use a stateless client — no cookies, no session refresh side effects
-  const supabase = createSupabaseClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabase = createAdminClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback?type=recovery`,
   })
@@ -60,12 +71,13 @@ export async function sendSelfPasswordReset(): Promise<{ error?: string; success
   const user = await getSessionUser()
   if (!user?.email) return { error: 'Not authenticated' }
 
+  const { allowed } = rateLimit(`self-reset:${user.email}`, RESET_LIMIT)
+  if (!allowed) {
+    return { error: 'Too many reset requests. Please try again later.' }
+  }
+
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
-  const supabase = createSupabaseClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabase = createAdminClient()
   const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
     redirectTo: `${siteUrl}/auth/callback?type=recovery`,
   })

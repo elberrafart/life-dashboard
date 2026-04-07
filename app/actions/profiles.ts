@@ -4,6 +4,15 @@ import { createClient, getSessionUser } from '@/lib/supabase-server'
 import { checkIsAdmin } from './admin'
 import { AppState } from '@/lib/types'
 
+// Payload limits to prevent storage abuse
+const MAX_DISPLAY_NAME = 100
+const MAX_GOALS = 50
+const MAX_HABITS = 100
+const MAX_JOURNAL_DATES = 400
+const MAX_VISION_IMAGES = 20
+const MAX_VISION_IMAGE_BYTES = 2 * 1024 * 1024 // 2 MB per image
+const MAX_APP_STATE_BYTES = 5 * 1024 * 1024 // 5 MB total app state
+
 export async function syncProfile(data: {
   displayName: string
   xpTotal: number
@@ -17,6 +26,31 @@ export async function syncProfile(data: {
 }) {
   const user = await getSessionUser()
   if (!user) return
+
+  // ── Input validation ──────────────────────────────────────────────
+  if (typeof data.displayName !== 'string' || data.displayName.length > MAX_DISPLAY_NAME) return
+  if (typeof data.xpTotal !== 'number' || data.xpTotal < 0 || data.xpTotal > 1_000_000) return
+  if (typeof data.streak !== 'number' || data.streak < 0 || data.streak > 10_000) return
+  if (typeof data.kanbanDone !== 'number' || data.kanbanDone < 0 || data.kanbanDone > 100_000) return
+  if (!Array.isArray(data.goals) || data.goals.length > MAX_GOALS) return
+  if (!Array.isArray(data.habits) || data.habits.length > MAX_HABITS) return
+  if (!Array.isArray(data.journalDates) || data.journalDates.length > MAX_JOURNAL_DATES) return
+
+  // Reject oversized app state payloads
+  if (data.appState) {
+    const stateSize = new TextEncoder().encode(JSON.stringify(data.appState)).length
+    if (stateSize > MAX_APP_STATE_BYTES) return
+  }
+
+  // Validate vision images: count and individual size
+  if (data.visionImages) {
+    const keys = Object.keys(data.visionImages)
+    if (keys.length > MAX_VISION_IMAGES) return
+    for (const key of keys) {
+      if (typeof data.visionImages[key] !== 'string') return
+      if (data.visionImages[key].length > MAX_VISION_IMAGE_BYTES) return
+    }
+  }
 
   const supabase = await createClient()
 
@@ -114,6 +148,7 @@ export async function getAllProfiles(): Promise<UserProfile[]> {
 export async function adminGetUserAppState(userId: string): Promise<AppState | null> {
   const isAdmin = await checkIsAdmin()
   if (!isAdmin) throw new Error('Unauthorized')
+  if (typeof userId !== 'string' || !/^[0-9a-f-]{36}$/i.test(userId)) throw new Error('Invalid user ID')
 
   const supabase = createAdminClient()
   const { data } = await supabase
@@ -135,6 +170,22 @@ export async function adminSetUserLists(
 ): Promise<{ error?: string }> {
   const isAdmin = await checkIsAdmin()
   if (!isAdmin) throw new Error('Unauthorized')
+
+  // Validate userId format (UUID)
+  if (typeof userId !== 'string' || !/^[0-9a-f-]{36}$/i.test(userId)) {
+    return { error: 'Invalid user ID' }
+  }
+
+  // Validate array sizes to prevent oversized payloads
+  if (patch.habits && (!Array.isArray(patch.habits) || patch.habits.length > MAX_HABITS)) {
+    return { error: 'Too many habits' }
+  }
+  if (patch.goals && (!Array.isArray(patch.goals) || patch.goals.length > MAX_GOALS)) {
+    return { error: 'Too many goals' }
+  }
+  if (patch.kanban && (!Array.isArray(patch.kanban) || patch.kanban.length > 500)) {
+    return { error: 'Too many kanban cards' }
+  }
 
   const supabase = createAdminClient()
 
@@ -176,6 +227,7 @@ export async function adminSetUserLists(
 export async function getProfileCheckIns(userId: string) {
   const isAdmin = await checkIsAdmin()
   if (!isAdmin) throw new Error('Unauthorized')
+  if (typeof userId !== 'string' || !/^[0-9a-f-]{36}$/i.test(userId)) throw new Error('Invalid user ID')
 
   const supabase = createAdminClient()
   const { data, error } = await supabase

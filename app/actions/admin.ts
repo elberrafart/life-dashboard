@@ -113,6 +113,9 @@ export async function sendPasswordReset(email: string): Promise<{ error?: string
 
 export async function deleteUser(userId: string): Promise<{ error?: string }> {
   try {
+    if (typeof userId !== 'string' || !/^[0-9a-f-]{36}$/i.test(userId)) {
+      return { error: 'Invalid user ID' }
+    }
     await assertAdmin()
     const supabase = createAdminClient()
 

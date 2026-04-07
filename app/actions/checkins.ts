@@ -15,6 +15,11 @@ export type CheckIn = {
   created_at: string
 }
 
+const ALLOWED_MOODS = [
+  'Motivated', 'Strong', 'Encouraged', 'Focused', 'Grateful',
+  'Calm', 'Sad', 'Mad', 'Drained', 'Anxious',
+]
+
 export async function submitCheckIn(data: {
   mood: string
   note: string
@@ -24,7 +29,13 @@ export async function submitCheckIn(data: {
   const user = await getSessionUser()
   if (!user) throw new Error('Not authenticated')
 
-  if (data.note && data.note.length > 1000) throw new Error('Note too long')
+  if (typeof data.mood !== 'string' || data.mood.length > 50) throw new Error('Invalid mood')
+  // Mood format is "emoji Label" — require a space and validate the label portion
+  const moodParts = data.mood.split(' ')
+  const moodLabel = moodParts.slice(1).join(' ')
+  if (!moodLabel || !ALLOWED_MOODS.includes(moodLabel)) throw new Error('Invalid mood value')
+
+  if (typeof data.note !== 'string' || data.note.length > 1000) throw new Error('Note too long')
   if (typeof data.xpToday !== 'number' || data.xpToday < 0 || data.xpToday > 1_000_000) throw new Error('Invalid XP value')
   if (typeof data.habitsCompleted !== 'number' || data.habitsCompleted < 0 || data.habitsCompleted > 1000) throw new Error('Invalid habits count')
 
