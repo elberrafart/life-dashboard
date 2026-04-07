@@ -10,7 +10,7 @@ import React, {
   ReactNode,
 } from 'react'
 import { AppState, Goal, Habit, KanbanCard, XPEvent, getLevelInfo } from './types'
-import { loadState, saveState, loadImages, getTodayKey } from './store'
+import { loadState, loadStateAsync, saveState, loadImages, loadImagesAsync, getTodayKey } from './store'
 import { syncProfile, loadUserState } from '@/app/actions/profiles'
 import { initTheme } from './theme'
 
@@ -216,38 +216,45 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
   const [floatingXPs, setFloatingXPs] = useState<FloatingXPItem[]>([])
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Load state on mount: localStorage first (instant), then DB (authoritative)
+  // Load state on mount: localStorage first (instant fallback), then encrypted/DB (authoritative)
   useEffect(() => {
     initTheme()
-    const localState = loadState(userId)
-    dispatch({ type: 'SET_STATE', payload: localState })
+    // Show sync fallback for unencrypted legacy data instantly
+    const syncState = loadState(userId)
+    dispatch({ type: 'SET_STATE', payload: syncState })
 
-    loadUserState().then(({ state: dbState, images: dbImages }) => {
+    // Then decrypt localStorage + merge with DB (both async)
+    Promise.all([loadStateAsync(userId), loadUserState()]).then(([localState, { state: dbState, images: dbImages }]) => {
+      // Use decrypted local state if sync load returned default
+      if (localState !== syncState) {
+        dispatch({ type: 'SET_STATE', payload: localState })
+      }
+
       if (dbState) {
         // DB is the source of truth — merge images from both DB and localStorage
-        const localImages = loadImages(userId)
-        const localGoalMap = new Map((localState.goals ?? []).map(g => [g.id, g]))
-        const mergedGoals = (dbState.goals ?? []).map(g => {
-          const localGoal = localGoalMap.get(g.id)
-          // If local has more tasks than DB (e.g. DB sync failed), keep local tasks
-          const tasks = localGoal && localGoal.tasks.length > (g.tasks?.length ?? 0)
-            ? localGoal.tasks
-            : (g.tasks ?? [])
-          return {
-            ...g,
-            tasks,
-            visionImageBase64: dbImages?.[g.id] ?? localImages[g.id] ?? g.visionImageBase64,
-          }
-        })
-        dispatch({
-          type: 'SET_STATE',
-          payload: {
-            ...PLACEHOLDER_STATE,
-            ...dbState,
-            goalArchive: dbState.goalArchive ?? [],
-            kanbanArchive: dbState.kanbanArchive ?? [],
-            goals: mergedGoals,
-          },
+        loadImagesAsync(userId).then(localImages => {
+          const localGoalMap = new Map((localState.goals ?? []).map(g => [g.id, g]))
+          const mergedGoals = (dbState.goals ?? []).map(g => {
+            const localGoal = localGoalMap.get(g.id)
+            const tasks = localGoal && localGoal.tasks.length > (g.tasks?.length ?? 0)
+              ? localGoal.tasks
+              : (g.tasks ?? [])
+            return {
+              ...g,
+              tasks,
+              visionImageBase64: dbImages?.[g.id] ?? localImages[g.id] ?? g.visionImageBase64,
+            }
+          })
+          dispatch({
+            type: 'SET_STATE',
+            payload: {
+              ...PLACEHOLDER_STATE,
+              ...dbState,
+              goalArchive: dbState.goalArchive ?? [],
+              kanbanArchive: dbState.kanbanArchive ?? [],
+              goals: mergedGoals,
+            },
+          })
         })
       }
     }).catch(() => {/* DB unavailable — localStorage is fine */}).finally(() => {

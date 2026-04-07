@@ -1,4 +1,5 @@
 import { AppState } from './types'
+import { encrypt, decrypt } from './crypto'
 
 function storageKey(userId?: string) {
   return userId ? `life-dashboard-v5-${userId}` : 'life-dashboard-v5'
@@ -14,9 +15,30 @@ function saveImages(goals: AppState['goals'], userId?: string): void {
     for (const goal of goals) {
       if (goal.visionImageBase64) images[goal.id] = goal.visionImageBase64
     }
-    localStorage.setItem(imageStorageKey(userId), JSON.stringify(images))
+    if (userId) {
+      encrypt(JSON.stringify(images), userId).then(encrypted => {
+        try { localStorage.setItem(imageStorageKey(userId), encrypted) } catch { /* quota */ }
+      })
+    } else {
+      localStorage.setItem(imageStorageKey(userId), JSON.stringify(images))
+    }
   } catch {
     // quota exceeded
+  }
+}
+
+export async function loadImagesAsync(userId?: string): Promise<Record<string, string>> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = localStorage.getItem(imageStorageKey(userId))
+    if (!raw) return {}
+    if (userId) {
+      const decrypted = await decrypt(raw, userId)
+      return JSON.parse(decrypted) as Record<string, string>
+    }
+    return JSON.parse(raw) as Record<string, string>
+  } catch {
+    return {}
   }
 }
 
@@ -24,7 +46,12 @@ export function loadImages(userId?: string): Record<string, string> {
   if (typeof window === 'undefined') return {}
   try {
     const raw = localStorage.getItem(imageStorageKey(userId))
-    return raw ? (JSON.parse(raw) as Record<string, string>) : {}
+    if (!raw) return {}
+    // Sync fallback: only works for unencrypted (legacy) data
+    if (raw.startsWith('{') || raw.startsWith('[')) {
+      return JSON.parse(raw) as Record<string, string>
+    }
+    return {} // encrypted data must use loadImagesAsync
   } catch {
     return {}
   }
@@ -55,33 +82,58 @@ export const DEFAULT_STATE: AppState = {
   moodLog: {},
 }
 
+function mergeState(parsed: Partial<AppState>, images: Record<string, string>): AppState {
+  const merged = { ...DEFAULT_STATE, ...parsed }
+  merged.goals = merged.goals.map(g => ({
+    ...g,
+    visionImageBase64: images[g.id] ?? g.visionImageBase64,
+  }))
+  if (!merged.goalArchive) merged.goalArchive = []
+  if (!merged.kanbanArchive) merged.kanbanArchive = []
+  // Auto-archive done kanban cards older than 1 day
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
+  const toArchive = merged.kanban.filter(k =>
+    k.column === 'done' && k.completedAt && new Date(k.completedAt).getTime() < oneDayAgo
+  )
+  if (toArchive.length > 0) {
+    const archiveIds = new Set(toArchive.map(k => k.id))
+    merged.kanban = merged.kanban.filter(k => !archiveIds.has(k.id))
+    merged.kanbanArchive = [...(merged.kanbanArchive ?? []), ...toArchive]
+  }
+  return merged
+}
+
+/** Sync load — works for legacy (unencrypted) data only */
 export function loadState(userId?: string): AppState {
   if (typeof window === 'undefined') return DEFAULT_STATE
   try {
     const raw = localStorage.getItem(storageKey(userId))
     if (!raw) return DEFAULT_STATE
+    // If data is encrypted (not JSON), return default — async load will follow
+    if (!raw.startsWith('{') && !raw.startsWith('[')) return DEFAULT_STATE
     const parsed = JSON.parse(raw) as Partial<AppState>
-    const merged = { ...DEFAULT_STATE, ...parsed }
-    // Merge images stored separately (prefer separate key; fall back to embedded for old data)
     const images = loadImages(userId)
-    merged.goals = merged.goals.map(g => ({
-      ...g,
-      visionImageBase64: images[g.id] ?? g.visionImageBase64,
-    }))
-    // Ensure archive arrays exist (backward compat)
-    if (!merged.goalArchive) merged.goalArchive = []
-    if (!merged.kanbanArchive) merged.kanbanArchive = []
-    // Auto-archive done kanban cards older than 1 day
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
-    const toArchive = merged.kanban.filter(k =>
-      k.column === 'done' && k.completedAt && new Date(k.completedAt).getTime() < oneDayAgo
-    )
-    if (toArchive.length > 0) {
-      const archiveIds = new Set(toArchive.map(k => k.id))
-      merged.kanban = merged.kanban.filter(k => !archiveIds.has(k.id))
-      merged.kanbanArchive = [...(merged.kanbanArchive ?? []), ...toArchive]
+    return mergeState(parsed, images)
+  } catch {
+    return DEFAULT_STATE
+  }
+}
+
+/** Async load — decrypts encrypted localStorage data */
+export async function loadStateAsync(userId?: string): Promise<AppState> {
+  if (typeof window === 'undefined') return DEFAULT_STATE
+  try {
+    const raw = localStorage.getItem(storageKey(userId))
+    if (!raw) return DEFAULT_STATE
+    let json: string
+    if (userId && !raw.startsWith('{') && !raw.startsWith('[')) {
+      json = await decrypt(raw, userId)
+    } else {
+      json = raw
     }
-    return merged
+    const parsed = JSON.parse(json) as Partial<AppState>
+    const images = await loadImagesAsync(userId)
+    return mergeState(parsed, images)
   } catch {
     return DEFAULT_STATE
   }
@@ -96,7 +148,14 @@ export function saveState(state: AppState, userId?: string): void {
       ...state,
       goals: state.goals.map(({ visionImageBase64: _, ...rest }) => rest),
     }
-    localStorage.setItem(storageKey(userId), JSON.stringify(stateWithoutImages))
+    const json = JSON.stringify(stateWithoutImages)
+    if (userId) {
+      encrypt(json, userId).then(encrypted => {
+        try { localStorage.setItem(storageKey(userId), encrypted) } catch { /* quota */ }
+      })
+    } else {
+      localStorage.setItem(storageKey(userId), json)
+    }
   } catch {
     // storage full or unavailable
   }

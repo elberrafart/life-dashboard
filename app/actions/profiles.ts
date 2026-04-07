@@ -42,13 +42,20 @@ export async function syncProfile(data: {
     if (stateSize > MAX_APP_STATE_BYTES) return
   }
 
-  // Validate vision images: count and individual size
+  // Validate vision images: count, size, and MIME type
+  const ALLOWED_IMAGE_PREFIXES = [
+    'data:image/jpeg;base64,', 'data:image/png;base64,',
+    'data:image/gif;base64,', 'data:image/webp;base64,',
+    'data:image/svg+xml;base64,',
+  ]
   if (data.visionImages) {
     const keys = Object.keys(data.visionImages)
     if (keys.length > MAX_VISION_IMAGES) return
     for (const key of keys) {
-      if (typeof data.visionImages[key] !== 'string') return
-      if (data.visionImages[key].length > MAX_VISION_IMAGE_BYTES) return
+      const img = data.visionImages[key]
+      if (typeof img !== 'string') return
+      if (img.length > MAX_VISION_IMAGE_BYTES) return
+      if (!ALLOWED_IMAGE_PREFIXES.some(p => img.startsWith(p))) return
     }
   }
 

@@ -39,11 +39,19 @@ export default function VisionBoard() {
   }, [activeCardId])
 
   function handleImageUpload(goalId: string, file: File) {
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+    const MAX_SIZE = 2 * 1024 * 1024 // 2 MB
+    if (!ALLOWED_TYPES.includes(file.type)) return
+    if (file.size > MAX_SIZE) return
+
     const reader = new FileReader()
     reader.onload = (e) => {
+      const result = e.target?.result as string
+      // Validate data URI prefix matches an image MIME type
+      if (!result || !/^data:image\/(jpeg|png|gif|webp|svg\+xml);base64,/.test(result)) return
       const goal = state.goals.find(g => g.id === goalId)
       if (!goal) return
-      dispatch({ type: 'UPDATE_GOAL', payload: { ...goal, visionImageBase64: e.target?.result as string } })
+      dispatch({ type: 'UPDATE_GOAL', payload: { ...goal, visionImageBase64: result } })
     }
     reader.readAsDataURL(file)
   }
