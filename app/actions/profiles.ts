@@ -23,46 +23,45 @@ export async function syncProfile(data: {
   kanbanDone: number
   appState?: Omit<AppState, 'goals'> & { goals: Omit<AppState['goals'][0], 'visionImageBase64'>[] }
   visionImages?: Record<string, string>
-}) {
+}): Promise<{ error?: string }> {
   const user = await getSessionUser()
-  if (!user) return
+  if (!user) return { error: 'Not authenticated' }
 
   // ── Input validation ──────────────────────────────────────────────
-  if (typeof data.displayName !== 'string' || data.displayName.length > MAX_DISPLAY_NAME) return
-  if (typeof data.xpTotal !== 'number' || data.xpTotal < 0 || data.xpTotal > 1_000_000) return
-  if (typeof data.streak !== 'number' || data.streak < 0 || data.streak > 10_000) return
-  if (typeof data.kanbanDone !== 'number' || data.kanbanDone < 0 || data.kanbanDone > 100_000) return
-  if (!Array.isArray(data.goals) || data.goals.length > MAX_GOALS) return
-  if (!Array.isArray(data.habits) || data.habits.length > MAX_HABITS) return
-  if (!Array.isArray(data.journalDates) || data.journalDates.length > MAX_JOURNAL_DATES) return
+  if (typeof data.displayName !== 'string' || data.displayName.length > MAX_DISPLAY_NAME) return { error: 'Invalid display name' }
+  if (typeof data.xpTotal !== 'number' || data.xpTotal < 0 || data.xpTotal > 1_000_000) return { error: 'Invalid XP value' }
+  if (typeof data.streak !== 'number' || data.streak < 0 || data.streak > 10_000) return { error: 'Invalid streak value' }
+  if (typeof data.kanbanDone !== 'number' || data.kanbanDone < 0 || data.kanbanDone > 100_000) return { error: 'Invalid kanban count' }
+  if (!Array.isArray(data.goals) || data.goals.length > MAX_GOALS) return { error: 'Too many goals' }
+  if (!Array.isArray(data.habits) || data.habits.length > MAX_HABITS) return { error: 'Too many habits' }
+  if (!Array.isArray(data.journalDates) || data.journalDates.length > MAX_JOURNAL_DATES) return { error: 'Too many journal dates' }
 
   // Reject oversized app state payloads
   if (data.appState) {
     const stateSize = new TextEncoder().encode(JSON.stringify(data.appState)).length
-    if (stateSize > MAX_APP_STATE_BYTES) return
+    if (stateSize > MAX_APP_STATE_BYTES) return { error: 'App state too large' }
   }
 
-  // Validate vision images: count, size, and MIME type
+  // Validate vision images: count, size, and MIME type (SVG excluded — XSS vector)
   const ALLOWED_IMAGE_PREFIXES = [
     'data:image/jpeg;base64,', 'data:image/png;base64,',
     'data:image/gif;base64,', 'data:image/webp;base64,',
-    'data:image/svg+xml;base64,',
   ]
   if (data.visionImages) {
     const keys = Object.keys(data.visionImages)
-    if (keys.length > MAX_VISION_IMAGES) return
+    if (keys.length > MAX_VISION_IMAGES) return { error: 'Too many vision images' }
     for (const key of keys) {
       const img = data.visionImages[key]
-      if (typeof img !== 'string') return
-      if (img.length > MAX_VISION_IMAGE_BYTES) return
-      if (!ALLOWED_IMAGE_PREFIXES.some(p => img.startsWith(p))) return
+      if (typeof img !== 'string') return { error: 'Invalid image data' }
+      if (img.length > MAX_VISION_IMAGE_BYTES) return { error: 'Image too large (max 2 MB)' }
+      if (!ALLOWED_IMAGE_PREFIXES.some(p => img.startsWith(p))) return { error: 'Unsupported image type' }
     }
   }
 
   const supabase = await createClient()
 
   // Save app state first (small payload — must not fail due to image size)
-  await supabase.from('user_profiles').upsert(
+  const { error: profileError } = await supabase.from('user_profiles').upsert(
     {
       user_id: user.id,
       user_email: user.email,
@@ -79,13 +78,19 @@ export async function syncProfile(data: {
     { onConflict: 'user_id' }
   )
 
+  if (profileError) return { error: profileError.message }
+
   // Save vision images in a separate update — may be large, allowed to fail independently
   if (data.visionImages && Object.keys(data.visionImages).length > 0) {
-    await supabase
+    const { error: imgError } = await supabase
       .from('user_profiles')
       .update({ vision_images: data.visionImages })
       .eq('user_id', user.id)
+
+    if (imgError) return { error: imgError.message }
   }
+
+  return {}
 }
 
 export async function loadUserState(): Promise<{ state?: AppState; images?: Record<string, string> }> {

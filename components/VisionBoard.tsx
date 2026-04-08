@@ -39,7 +39,7 @@ export default function VisionBoard() {
   }, [activeCardId])
 
   function handleImageUpload(goalId: string, file: File) {
-    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     const MAX_SIZE = 2 * 1024 * 1024 // 2 MB
     if (!ALLOWED_TYPES.includes(file.type)) return
     if (file.size > MAX_SIZE) return
@@ -47,8 +47,8 @@ export default function VisionBoard() {
     const reader = new FileReader()
     reader.onload = (e) => {
       const result = e.target?.result as string
-      // Validate data URI prefix matches an image MIME type
-      if (!result || !/^data:image\/(jpeg|png|gif|webp|svg\+xml);base64,/.test(result)) return
+      // Validate data URI prefix matches an image MIME type (SVG excluded — XSS vector)
+      if (!result || !/^data:image\/(jpeg|png|gif|webp);base64,/.test(result)) return
       const goal = state.goals.find(g => g.id === goalId)
       if (!goal) return
       dispatch({ type: 'UPDATE_GOAL', payload: { ...goal, visionImageBase64: result } })
@@ -338,7 +338,7 @@ export default function VisionBoard() {
 
                 <input
                   ref={el => { fileInputRefs.current[goal.id] = el }}
-                  type="file" accept="image/*" style={{ display: 'none' }}
+                  type="file" accept="image/jpeg,image/png,image/gif,image/webp" style={{ display: 'none' }}
                   onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(goal.id, f) }}
                 />
               </div>

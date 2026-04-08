@@ -35,16 +35,16 @@ export default function CheckIn() {
   function handleSubmit() {
     if (!mood) return
     startTransition(async () => {
-      try {
-        await submitCheckIn({ mood, note, xpToday: totalXP, habitsCompleted })
-        setDone(true)
-        getTodayCheckIn().then(ci => {
-          setExisting(ci)
-          getUserCheckIns().then(setHistory)
-        })
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to submit')
+      const result = await submitCheckIn({ mood, note, xpToday: totalXP, habitsCompleted })
+      if (result.error) {
+        setError(result.error)
+        return
       }
+      setDone(true)
+      getTodayCheckIn().then(ci => {
+        setExisting(ci)
+        getUserCheckIns().then(setHistory)
+      })
     })
   }
 

@@ -16,8 +16,7 @@ export type CheckIn = {
 }
 
 const ALLOWED_MOODS = [
-  'Motivated', 'Strong', 'Encouraged', 'Focused', 'Grateful',
-  'Calm', 'Sad', 'Mad', 'Drained', 'Anxious',
+  'On Fire', 'Strong', 'Good', 'Neutral', 'Down', 'Struggling',
 ]
 
 export async function submitCheckIn(data: {
@@ -25,19 +24,19 @@ export async function submitCheckIn(data: {
   note: string
   xpToday: number
   habitsCompleted: number
-}) {
+}): Promise<{ error?: string }> {
   const user = await getSessionUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) return { error: 'Not authenticated' }
 
-  if (typeof data.mood !== 'string' || data.mood.length > 50) throw new Error('Invalid mood')
+  if (typeof data.mood !== 'string' || data.mood.length > 50) return { error: 'Invalid mood' }
   // Mood format is "emoji Label" — require a space and validate the label portion
   const moodParts = data.mood.split(' ')
   const moodLabel = moodParts.slice(1).join(' ')
-  if (!moodLabel || !ALLOWED_MOODS.includes(moodLabel)) throw new Error('Invalid mood value')
+  if (!moodLabel || !ALLOWED_MOODS.includes(moodLabel)) return { error: 'Invalid mood value' }
 
-  if (typeof data.note !== 'string' || data.note.length > 1000) throw new Error('Note too long')
-  if (typeof data.xpToday !== 'number' || data.xpToday < 0 || data.xpToday > 1_000_000) throw new Error('Invalid XP value')
-  if (typeof data.habitsCompleted !== 'number' || data.habitsCompleted < 0 || data.habitsCompleted > 1000) throw new Error('Invalid habits count')
+  if (typeof data.note !== 'string' || data.note.length > 1000) return { error: 'Note too long' }
+  if (typeof data.xpToday !== 'number' || data.xpToday < 0 || data.xpToday > 1_000_000) return { error: 'Invalid XP value' }
+  if (typeof data.habitsCompleted !== 'number' || data.habitsCompleted < 0 || data.habitsCompleted > 1000) return { error: 'Invalid habits count' }
 
   const supabase = await createClient()
   const today = new Date().toISOString().split('T')[0]
@@ -55,7 +54,8 @@ export async function submitCheckIn(data: {
     { onConflict: 'user_id,date' }
   )
 
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
+  return {}
 }
 
 export async function getTodayCheckIn(): Promise<CheckIn | null> {
