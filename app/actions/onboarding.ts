@@ -40,6 +40,30 @@ export async function saveOnboarding(
   const supabase = createAdminClient()
   const displayName = [firstName, lastName].filter(Boolean).join(' ')
 
+  // Initialize app_state so the dashboard has profile data immediately
+  const initialAppState = {
+    playerName: displayName,
+    firstName,
+    lastName: lastName || '',
+    profileYear: profileYear || '',
+    tagline: tagline || '',
+    goals: [],
+    habits: [],
+    checked: {},
+    kanban: [],
+    xpFeed: [],
+    vision: { quoteText: '', quoteSub: '' },
+    habitHistory: {},
+    streak: 0,
+    lastCheckedDate: '',
+    habitXP: 0,
+    journalEntries: {},
+    moodLog: {},
+    goalArchive: [],
+    kanbanArchive: [],
+    hideFromLeaderboard: false,
+  }
+
   const { error } = await supabase.from('user_profiles').upsert(
     {
       user_id: user.id,
@@ -50,6 +74,7 @@ export async function saveOnboarding(
       profile_year: profileYear || null,
       tagline: tagline || null,
       onboarding_complete: true,
+      app_state: initialAppState,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'user_id' }

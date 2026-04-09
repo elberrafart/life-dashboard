@@ -215,6 +215,17 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [floatingXPs, setFloatingXPs] = useState<FloatingXPItem[]>([])
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Track whether the user has dispatched actions before DB load finishes
+  const userEditedRef = useRef(false)
+  const dbLoadDoneRef = useRef(false)
+
+  // Wrap dispatch to detect user edits during DB load
+  const trackedDispatch = useCallback((action: Action) => {
+    if (!dbLoadDoneRef.current && action.type !== 'SET_STATE') {
+      userEditedRef.current = true
+    }
+    dispatch(action)
+  }, [])
 
   // Load state on mount: localStorage first (instant fallback), then encrypted/DB (authoritative)
   useEffect(() => {
@@ -225,6 +236,12 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
 
     // Then decrypt localStorage + merge with DB (both async)
     Promise.all([loadStateAsync(userId), loadUserState()]).then(([localState, { state: dbState, images: dbImages }]) => {
+      // If user has already made edits, don't overwrite with stale DB data
+      if (userEditedRef.current) {
+        dbLoadDoneRef.current = true
+        return
+      }
+
       // Use decrypted local state if sync load returned default
       if (localState !== syncState) {
         dispatch({ type: 'SET_STATE', payload: localState })
@@ -233,6 +250,9 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
       if (dbState) {
         // DB is the source of truth — merge images from both DB and localStorage
         loadImagesAsync(userId).then(localImages => {
+          // Re-check: user may have edited while images were loading
+          if (userEditedRef.current) return
+
           const localGoalMap = new Map((localState.goals ?? []).map(g => [g.id, g]))
           const mergedGoals = (dbState.goals ?? []).map(g => {
             const localGoal = localGoalMap.get(g.id)
@@ -258,6 +278,7 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
         })
       }
     }).catch(() => {/* DB unavailable — localStorage is fine */}).finally(() => {
+      dbLoadDoneRef.current = true
       setLoaded(true)
     })
   }, [])
@@ -378,7 +399,7 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
   return (
     <AppContext.Provider value={{
       state,
-      dispatch,
+      dispatch: trackedDispatch,
       totalXP,
       todayXP,
       saveStatus,

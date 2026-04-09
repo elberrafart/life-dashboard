@@ -60,6 +60,14 @@ export async function syncProfile(data: {
 
   const supabase = await createClient()
 
+  // Extract profile fields from appState to keep individual columns in sync
+  const profileFields = data.appState ? {
+    first_name: (data.appState as Record<string, unknown>).firstName as string || null,
+    last_name: (data.appState as Record<string, unknown>).lastName as string || null,
+    profile_year: (data.appState as Record<string, unknown>).profileYear as string || null,
+    tagline: (data.appState as Record<string, unknown>).tagline as string || null,
+  } : {}
+
   // Save app state first (small payload — must not fail due to image size)
   const { error: profileError } = await supabase.from('user_profiles').upsert(
     {
@@ -73,6 +81,7 @@ export async function syncProfile(data: {
       journal_dates: data.journalDates,
       kanban_done: data.kanbanDone,
       app_state: data.appState ?? null,
+      ...profileFields,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'user_id' }
@@ -100,13 +109,38 @@ export async function loadUserState(): Promise<{ state?: AppState; images?: Reco
   const supabase = await createClient()
   const { data } = await supabase
     .from('user_profiles')
-    .select('app_state, vision_images')
+    .select('app_state, vision_images, first_name, last_name, profile_year, tagline, display_name')
     .eq('user_id', user.id)
     .single()
 
-  if (!data?.app_state) return {}
+  if (!data) return {}
+
+  const appState = (data.app_state as AppState) ?? undefined
+  // Merge individual profile columns into app_state so onboarding data isn't lost
+  const profileOverlay = {
+    ...(data.first_name != null && { firstName: data.first_name as string }),
+    ...(data.last_name != null && { lastName: data.last_name as string }),
+    ...(data.profile_year != null && { profileYear: data.profile_year as string }),
+    ...(data.tagline != null && { tagline: data.tagline as string }),
+    ...(data.display_name != null && { playerName: data.display_name as string }),
+  }
+
+  if (!appState) {
+    // No app_state yet (fresh after onboarding) — return profile columns as seed state
+    if (Object.keys(profileOverlay).length === 0) return {}
+    return { state: profileOverlay as AppState }
+  }
+
+  // Merge: individual columns win when app_state fields are empty/missing
+  const merged: AppState = { ...appState }
+  if (!merged.firstName && profileOverlay.firstName) merged.firstName = profileOverlay.firstName
+  if (!merged.lastName && profileOverlay.lastName) merged.lastName = profileOverlay.lastName
+  if (!merged.profileYear && profileOverlay.profileYear) merged.profileYear = profileOverlay.profileYear
+  if (!merged.tagline && profileOverlay.tagline) merged.tagline = profileOverlay.tagline
+  if (!merged.playerName && profileOverlay.playerName) merged.playerName = profileOverlay.playerName
+
   return {
-    state: data.app_state as AppState,
+    state: merged,
     images: (data.vision_images as Record<string, string>) ?? undefined,
   }
 }
