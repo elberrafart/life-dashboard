@@ -115,5 +115,10 @@ export async function updatePassword(_state: UpdatePasswordState, formData: Form
     return { error: error.message }
   }
 
-  redirect('/')
+  // Sign out so the recovery JWT (which carries amr=otp) is fully cleared.
+  // The proxy treats amr=otp sessions as "must update password", so leaving
+  // the recovery session alive after a successful update would trap the user
+  // in a redirect loop. Forcing a fresh login guarantees a clean session.
+  await supabase.auth.signOut()
+  redirect('/login?reset=success')
 }

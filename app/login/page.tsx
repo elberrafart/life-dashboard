@@ -1,11 +1,18 @@
 'use client'
-import { useState, useActionState } from 'react'
+import { useState, useActionState, useEffect } from 'react'
 import { login, resetPassword } from '@/app/actions/auth'
 
 export default function LoginPage() {
   const [forgotMode, setForgotMode] = useState(false)
+  const [resetSuccess, setResetSuccess] = useState(false)
   const [state, action, pending] = useActionState(login, undefined)
   const [resetState, resetAction, resetPending] = useActionState(resetPassword, undefined)
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('reset') === 'success') {
+      setResetSuccess(true)
+    }
+  }, [])
 
   return (
     <div style={{
@@ -74,6 +81,18 @@ export default function LoginPage() {
           }}>
             {forgotMode ? 'RESET PASSWORD' : 'SIGN IN'}
           </div>
+
+          {resetSuccess && !forgotMode && (
+            <div style={{
+              fontSize: 13, color: '#4caf7d',
+              background: 'rgba(76,175,125,0.08)',
+              border: '1px solid rgba(76,175,125,0.2)',
+              borderRadius: 6, padding: '12px 14px',
+              letterSpacing: 0.3, marginBottom: 18,
+            }}>
+              Password updated. Sign in with your new password.
+            </div>
+          )}
 
           {forgotMode ? (
             resetState?.success ? (

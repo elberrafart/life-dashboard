@@ -50,7 +50,7 @@ type AppContextType = {
   dispatch: (action: Action) => void
   totalXP: number
   todayXP: number
-  saveStatus: 'idle' | 'saving' | 'saved'
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error'
   floatingXPs: FloatingXPItem[]
   awardGoalXP: (goalId: string, xp: number, emoji: string, description: string, x?: number, y?: number) => void
   awardHabitXP: (habitId: string, xp: number, label: string, x?: number, y?: number) => void
@@ -212,7 +212,7 @@ const PLACEHOLDER_STATE: AppState = {
 export function AppProvider({ children, userId }: { children: ReactNode; userId?: string }) {
   const [state, dispatch] = useReducer(reducer, PLACEHOLDER_STATE)
   const [loaded, setLoaded] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [floatingXPs, setFloatingXPs] = useState<FloatingXPItem[]>([])
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Track whether the user has dispatched actions before DB load finishes
@@ -227,44 +227,58 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
     dispatch(action)
   }, [])
 
-  // Load state on mount: localStorage first (instant fallback), then encrypted/DB (authoritative)
+  // Load state on mount.
+  //
+  // Local-wins strategy: localStorage is the source of truth on this device.
+  // The DB is only used as a fallback seed when localStorage is empty (fresh
+  // device or cleared storage). This is correct for a single-user app and
+  // prevents stale or partially-synced DB state from ever destroying local
+  // progress on refresh. Cross-device sync would require per-field timestamps;
+  // we don't have those yet, and the user works from one device.
   useEffect(() => {
     initTheme()
     // Show sync fallback for unencrypted legacy data instantly
     const syncState = loadState(userId)
     dispatch({ type: 'SET_STATE', payload: syncState })
 
-    // Then decrypt localStorage + merge with DB (both async)
-    Promise.all([loadStateAsync(userId), loadUserState()]).then(([localState, { state: dbState, images: dbImages }]) => {
-      // If user has already made edits, don't overwrite with stale DB data
-      if (userEditedRef.current) {
-        dbLoadDoneRef.current = true
-        return
-      }
+    ;(async () => {
+      try {
+        // Decrypt localStorage state + images
+        const [localState, localImages] = await Promise.all([
+          loadStateAsync(userId),
+          loadImagesAsync(userId),
+        ])
 
-      // Use decrypted local state if sync load returned default
-      if (localState !== syncState) {
-        dispatch({ type: 'SET_STATE', payload: localState })
-      }
+        // Bail if user already started editing
+        if (userEditedRef.current) return
 
-      if (dbState) {
-        // DB is the source of truth — merge images from both DB and localStorage
-        loadImagesAsync(userId).then(localImages => {
-          // Re-check: user may have edited while images were loading
-          if (userEditedRef.current) return
-
-          const localGoalMap = new Map((localState.goals ?? []).map(g => [g.id, g]))
-          const mergedGoals = (dbState.goals ?? []).map(g => {
-            const localGoal = localGoalMap.get(g.id)
-            const tasks = localGoal && localGoal.tasks.length > (g.tasks?.length ?? 0)
-              ? localGoal.tasks
-              : (g.tasks ?? [])
-            return {
-              ...g,
-              tasks,
-              visionImageBase64: dbImages?.[g.id] ?? localImages[g.id] ?? g.visionImageBase64,
-            }
+        // Apply decrypted local state with images merged in
+        if (localState !== syncState || Object.keys(localImages).length > 0) {
+          const goalsWithImages = (localState.goals ?? []).map(g => ({
+            ...g,
+            visionImageBase64: localImages[g.id] ?? g.visionImageBase64,
+          }))
+          dispatch({
+            type: 'SET_STATE',
+            payload: { ...localState, goals: goalsWithImages },
           })
+        }
+
+        // If localStorage already has user data, it's authoritative — done.
+        // The autosave loop will push it to the DB.
+        const localHasData = (localState.goals?.length ?? 0) > 0
+                          || (localState.habits?.length ?? 0) > 0
+                          || (localState.kanban?.length ?? 0) > 0
+        if (localHasData) return
+
+        // Fresh local — seed from DB (new device, cleared storage, etc.)
+        const { state: dbState, images: dbImages } = await loadUserState()
+        if (userEditedRef.current) return
+        if (dbState) {
+          const seededGoals = (dbState.goals ?? []).map(g => ({
+            ...g,
+            visionImageBase64: dbImages?.[g.id] ?? g.visionImageBase64,
+          }))
           dispatch({
             type: 'SET_STATE',
             payload: {
@@ -272,15 +286,17 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
               ...dbState,
               goalArchive: dbState.goalArchive ?? [],
               kanbanArchive: dbState.kanbanArchive ?? [],
-              goals: mergedGoals,
+              goals: seededGoals,
             },
           })
-        })
+        }
+      } catch {
+        // Any failure — local state is already shown, that's fine
+      } finally {
+        dbLoadDoneRef.current = true
+        setLoaded(true)
       }
-    }).catch(() => {/* DB unavailable — localStorage is fine */}).finally(() => {
-      dbLoadDoneRef.current = true
-      setLoaded(true)
-    })
+    })()
   }, [])
 
   // Autosave — triggers immediately on any action (100ms debounce to batch rapid changes)
@@ -290,8 +306,6 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
       saveState(state, userId)
-      setSaveStatus('saved')
-      setTimeout(() => setSaveStatus('idle'), 1200)
       // Sync full state + key metrics to Supabase
       const totalXP = state.goals.reduce((s, g) => s + g.xp, 0) + (state.habitXP ?? 0)
       const visionImages: Record<string, string> = {}
@@ -310,7 +324,18 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
         kanbanDone: state.kanban.filter(k => k.column === 'done').length,
         appState: appStateForDB as Parameters<typeof syncProfile>[0]['appState'],
         visionImages,
-      }).catch(() => {/* silently ignore sync failures */})
+      }).then(result => {
+        if (result?.error) {
+          setSaveStatus('error')
+          setTimeout(() => setSaveStatus('idle'), 5000)
+        } else {
+          setSaveStatus('saved')
+          setTimeout(() => setSaveStatus('idle'), 1200)
+        }
+      }).catch(() => {
+        setSaveStatus('error')
+        setTimeout(() => setSaveStatus('idle'), 5000)
+      })
     }, 100)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [state, loaded])

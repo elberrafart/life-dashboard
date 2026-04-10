@@ -10,7 +10,9 @@ const MAX_GOALS = 50
 const MAX_HABITS = 100
 const MAX_JOURNAL_DATES = 400
 const MAX_VISION_IMAGES = 20
-const MAX_VISION_IMAGE_BYTES = 2 * 1024 * 1024 // 2 MB per image
+// 3 MB per encoded image — accounts for ~33% base64 overhead on top of the
+// client-side ~2 MB raw-file ceiling, so client and server agree.
+const MAX_VISION_IMAGE_BYTES = 3 * 1024 * 1024
 const MAX_APP_STATE_BYTES = 5 * 1024 * 1024 // 5 MB total app state
 
 export async function syncProfile(data: {
@@ -42,19 +44,24 @@ export async function syncProfile(data: {
     if (stateSize > MAX_APP_STATE_BYTES) return { error: 'App state too large' }
   }
 
-  // Validate vision images: count, size, and MIME type (SVG excluded — XSS vector)
+  // Validate vision images: count, size, and MIME type (SVG excluded — XSS vector).
+  // Bad/oversized images are silently dropped instead of failing the whole sync,
+  // so one stuck image can never block app_state, goals, habits, or journal saves.
   const ALLOWED_IMAGE_PREFIXES = [
     'data:image/jpeg;base64,', 'data:image/png;base64,',
     'data:image/gif;base64,', 'data:image/webp;base64,',
   ]
+  let cleanedVisionImages: Record<string, string> | undefined
   if (data.visionImages) {
     const keys = Object.keys(data.visionImages)
     if (keys.length > MAX_VISION_IMAGES) return { error: 'Too many vision images' }
+    cleanedVisionImages = {}
     for (const key of keys) {
       const img = data.visionImages[key]
-      if (typeof img !== 'string') return { error: 'Invalid image data' }
-      if (img.length > MAX_VISION_IMAGE_BYTES) return { error: 'Image too large (max 2 MB)' }
-      if (!ALLOWED_IMAGE_PREFIXES.some(p => img.startsWith(p))) return { error: 'Unsupported image type' }
+      if (typeof img !== 'string') continue
+      if (img.length > MAX_VISION_IMAGE_BYTES) continue
+      if (!ALLOWED_IMAGE_PREFIXES.some(p => img.startsWith(p))) continue
+      cleanedVisionImages[key] = img
     }
   }
 
@@ -90,10 +97,10 @@ export async function syncProfile(data: {
   if (profileError) return { error: profileError.message }
 
   // Save vision images in a separate update — may be large, allowed to fail independently
-  if (data.visionImages && Object.keys(data.visionImages).length > 0) {
+  if (cleanedVisionImages && Object.keys(cleanedVisionImages).length > 0) {
     const { error: imgError } = await supabase
       .from('user_profiles')
-      .update({ vision_images: data.visionImages })
+      .update({ vision_images: cleanedVisionImages })
       .eq('user_id', user.id)
 
     if (imgError) return { error: imgError.message }

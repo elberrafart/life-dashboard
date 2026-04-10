@@ -6,6 +6,36 @@ import { Goal } from '@/lib/types'
 
 function generateGoalId() { return `g-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }
 
+/** Downscale + re-encode an uploaded image so it fits well under the storage cap. */
+async function compressImage(file: File, maxDim = 1600, quality = 0.85): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image()
+    i.onload = () => resolve(i)
+    i.onerror = () => reject(new Error('Failed to decode image'))
+    i.src = dataUrl
+  })
+  let width = img.naturalWidth
+  let height = img.naturalHeight
+  if (width > maxDim || height > maxDim) {
+    const ratio = Math.min(maxDim / width, maxDim / height)
+    width = Math.round(width * ratio)
+    height = Math.round(height * ratio)
+  }
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas unavailable')
+  ctx.drawImage(img, 0, 0, width, height)
+  return canvas.toDataURL('image/jpeg', quality)
+}
+
 export default function VisionBoard() {
   const { state, dispatch } = useApp()
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
@@ -19,6 +49,8 @@ export default function VisionBoard() {
   const [editingQuote, setEditingQuote] = useState(false)
   const [quoteText, setQuoteText] = useState(state.vision.quoteText)
   const [quoteSub, setQuoteSub] = useState(state.vision.quoteSub)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
 
   const dragState = useRef<{
     goalId: string
@@ -38,22 +70,34 @@ export default function VisionBoard() {
     return () => document.removeEventListener('click', onDoc)
   }, [activeCardId])
 
-  function handleImageUpload(goalId: string, file: File) {
+  async function handleImageUpload(goalId: string, file: File) {
+    setUploadError(null)
     const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    const MAX_SIZE = 2 * 1024 * 1024 // 2 MB
-    if (!ALLOWED_TYPES.includes(file.type)) return
-    if (file.size > MAX_SIZE) return
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      // Validate data URI prefix matches an image MIME type (SVG excluded — XSS vector)
-      if (!result || !/^data:image\/(jpeg|png|gif|webp);base64,/.test(result)) return
+    const MAX_INPUT_SIZE = 15 * 1024 * 1024 // 15 MB raw input — gets compressed before storage
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setUploadError('Unsupported image type — use JPEG, PNG, GIF, or WebP')
+      return
+    }
+    if (file.size > MAX_INPUT_SIZE) {
+      setUploadError('Image too large — max 15 MB before compression')
+      return
+    }
+    setUploadingId(goalId)
+    try {
+      const compressed = await compressImage(file)
+      // Sanity check the compressed output
+      if (!/^data:image\/jpeg;base64,/.test(compressed)) {
+        setUploadError('Failed to encode image')
+        return
+      }
       const goal = state.goals.find(g => g.id === goalId)
       if (!goal) return
-      dispatch({ type: 'UPDATE_GOAL', payload: { ...goal, visionImageBase64: result } })
+      dispatch({ type: 'UPDATE_GOAL', payload: { ...goal, visionImageBase64: compressed } })
+    } catch {
+      setUploadError('Failed to process image — try a different file')
+    } finally {
+      setUploadingId(null)
     }
-    reader.readAsDataURL(file)
   }
 
   function saveQuote() {
@@ -141,6 +185,22 @@ export default function VisionBoard() {
           .vision-overlay-imgcontrols { display: none !important; }
         }
       `}</style>
+
+      {uploadError && (
+        <div
+          role="alert"
+          onClick={() => setUploadError(null)}
+          style={{
+            marginBottom: 10, padding: '10px 14px', borderRadius: 8,
+            background: 'rgba(220,80,60,0.12)', border: '1px solid rgba(220,80,60,0.4)',
+            color: '#f4b8ad', fontSize: 12, letterSpacing: 0.5, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          }}
+        >
+          <span>⚠ {uploadError}</span>
+          <span style={{ fontSize: 10, opacity: 0.7, letterSpacing: 1, textTransform: 'uppercase' }}>Tap to dismiss</span>
+        </div>
+      )}
 
       <div
         style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, alignItems: 'start' }}
@@ -290,9 +350,10 @@ export default function VisionBoard() {
 
                 <button
                   onClick={e => { e.stopPropagation(); fileInputRefs.current[goal.id]?.click() }}
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 6, color: 'var(--text2)', padding: '7px 14px', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-dm)', width: '100%' }}
+                  disabled={uploadingId === goal.id}
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 6, color: 'var(--text2)', padding: '7px 14px', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', cursor: uploadingId === goal.id ? 'wait' : 'pointer', fontFamily: 'var(--font-dm)', width: '100%', opacity: uploadingId === goal.id ? 0.6 : 1 }}
                 >
-                  📷 Change Image
+                  {uploadingId === goal.id ? '⏳ Processing…' : '📷 Change Image'}
                 </button>
 
                 {/* Orientation */}

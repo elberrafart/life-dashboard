@@ -166,8 +166,11 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
         )}
 
         {/* Autosave status */}
-        <div style={{ marginTop: 4, marginBottom: 4, padding: '10px 0', fontSize: 11, color: saveStatus === 'saved' ? 'var(--green)' : 'var(--text3)', letterSpacing: 1, borderBottom: '1px solid var(--border)' }}>
-          {saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'saving' ? '⏳ Saving…' : '● Auto-save on'}
+        <div style={{ marginTop: 4, marginBottom: 4, padding: '10px 0', fontSize: 11, color: saveStatus === 'saved' ? 'var(--green)' : saveStatus === 'error' ? '#f4b8ad' : 'var(--text3)', letterSpacing: 1, borderBottom: '1px solid var(--border)' }}>
+          {saveStatus === 'saved' ? '✓ Saved'
+            : saveStatus === 'saving' ? '⏳ Saving…'
+            : saveStatus === 'error' ? '⚠ Sync failed — retrying'
+            : '● Auto-save on'}
         </div>
 
         {/* Sign out at bottom */}
@@ -291,9 +294,12 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
               <span style={{ fontSize: 14, lineHeight: 1 }}>⏻</span> Sign Out
             </button>
           </form>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: saveStatus === 'saved' ? 'rgba(39,174,96,0.12)' : 'var(--surface)', border: `1px solid ${saveStatus === 'saved' ? 'var(--green)' : 'var(--border2)'}`, color: saveStatus === 'saved' ? 'var(--green)' : saveStatus === 'saving' ? 'var(--text3)' : 'var(--silver2)', borderRadius: 8, padding: '8px 16px', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 400ms', fontFamily: 'var(--font-dm)', minWidth: 90, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: saveStatus === 'saved' ? 'rgba(39,174,96,0.12)' : saveStatus === 'error' ? 'rgba(220,80,60,0.12)' : 'var(--surface)', border: `1px solid ${saveStatus === 'saved' ? 'var(--green)' : saveStatus === 'error' ? 'rgba(220,80,60,0.6)' : 'var(--border2)'}`, color: saveStatus === 'saved' ? 'var(--green)' : saveStatus === 'error' ? '#f4b8ad' : saveStatus === 'saving' ? 'var(--text3)' : 'var(--silver2)', borderRadius: 8, padding: '8px 16px', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 400ms', fontFamily: 'var(--font-dm)', minWidth: 90, justifyContent: 'center' }}>
             {saveStatus === 'saving' && <span className="pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text3)', display: 'inline-block' }} />}
-            {saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'saving' ? 'Saving…' : 'Auto-save'}
+            {saveStatus === 'saved' ? '✓ Saved'
+              : saveStatus === 'saving' ? 'Saving…'
+              : saveStatus === 'error' ? '⚠ Sync failed'
+              : 'Auto-save'}
           </div>
         </div>
 
