@@ -333,7 +333,12 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
         goals: state.goals.map(g => ({ id: g.id, name: g.name, emoji: g.emoji, category: g.category, xp: g.xp, taskCount: g.tasks.length })),
         habits: state.habits.map(h => ({ id: h.id, label: h.label })),
         journalDates: Object.keys(state.journalEntries ?? {}).filter(d => state.journalEntries[d]),
-        kanbanDone: state.kanban.filter(k => k.column === 'done').length,
+        // "Tasks done" in the admin view = Kanban "done" column + any goal
+        // subtasks the user has checked off. Kept in the kanban_done column
+        // to avoid a schema migration; the column name is now historical.
+        kanbanDone:
+          state.kanban.filter(k => k.column === 'done').length +
+          state.goals.reduce((sum, g) => sum + g.tasks.filter(t => t.completedAt).length, 0),
         appState: appStateForDB as Parameters<typeof syncProfile>[0]['appState'],
         visionImages: imagesChanged ? visionImages : undefined,
       }).then(result => {
