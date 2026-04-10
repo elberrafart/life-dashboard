@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useTransition } from 'react'
 import { useApp } from '@/lib/context'
-import { submitCheckIn, getTodayCheckIn, getUserCheckIns, type CheckIn } from '@/app/actions/checkins'
+import { submitCheckIn, getUserCheckIns, type CheckIn } from '@/app/actions/checkins'
 import CheckInCalendar from '@/components/CheckInCalendar'
 
 const MOODS = [
@@ -15,8 +15,8 @@ const MOODS = [
 
 export default function CheckIn() {
   const { state, totalXP } = useApp()
-  const [existing, setExisting] = useState<CheckIn | null | undefined>(undefined)
-  const [history, setHistory] = useState<CheckIn[]>([])
+  // `undefined` means "still loading" — distinct from an empty history array.
+  const [history, setHistory] = useState<CheckIn[] | undefined>(undefined)
   const [mood, setMood] = useState('')
   const [note, setNote] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -24,13 +24,15 @@ export default function CheckIn() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getTodayCheckIn().then(setExisting)
+    // Single round trip: getUserCheckIns returns up to 90 days descending,
+    // so history[0] is today's check-in if one exists.
     getUserCheckIns().then(setHistory)
   }, [])
 
   const today = new Date().toISOString().split('T')[0]
   const todayHabits = state.habitHistory?.[today] ?? {}
   const habitsCompleted = Object.values(todayHabits).filter(Boolean).length
+  const existing = history && history[0]?.date === today ? history[0] : null
 
   function handleSubmit() {
     if (!mood) return
@@ -41,14 +43,31 @@ export default function CheckIn() {
         return
       }
       setDone(true)
-      getTodayCheckIn().then(ci => {
-        setExisting(ci)
-        getUserCheckIns().then(setHistory)
-      })
+      getUserCheckIns().then(setHistory)
     })
   }
 
-  if (existing === undefined) return null
+  // Skeleton placeholder while history loads — reserves the layout footprint
+  // so the page below (Kanban, etc.) doesn't jump when data arrives.
+  if (history === undefined) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="card" style={{ padding: '22px 24px', minHeight: 280 }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--silver)', marginBottom: 4 }}>
+            Daily Check-In
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', letterSpacing: 0.5, opacity: 0.6 }}>
+            Loading…
+          </div>
+        </div>
+        <div className="card" style={{ padding: '20px 24px', minHeight: 180 }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 16 }}>
+            Check-In History
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
