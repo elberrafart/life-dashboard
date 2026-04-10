@@ -115,6 +115,15 @@ function ClientDetail({ profile, onBack }: { profile: UserProfile; onBack: () =>
   const goals  = fullState?.goals  ?? []
   const kanban = (fullState?.kanban ?? []).filter(k => k.column !== 'done')
 
+  // Journal entries + moods, sorted newest-first. Entries are keyed by
+  // YYYY-MM-DD date strings, which sort correctly as plain strings.
+  const journalEntries = fullState?.journalEntries ?? {}
+  const moodLog = fullState?.moodLog ?? {}
+  const journalDates = Object.keys(journalEntries)
+    .filter(d => journalEntries[d]?.trim())
+    .sort()
+    .reverse()
+
   const inputStyle: React.CSSProperties = {
     background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6,
     padding: '7px 10px', color: 'var(--text)', fontSize: 12, outline: 'none',
@@ -313,6 +322,41 @@ function ClientDetail({ profile, onBack }: { profile: UserProfile; onBack: () =>
               </div>
             ))}
           </>
+        )}
+      </div>
+
+      {/* Journal entries — read-only view of the athlete's daily journal + mood */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 20 }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', fontSize: 11, letterSpacing: 2, color: 'var(--silver)', textTransform: 'uppercase' }}>
+          Journal Entries ({journalDates.length})
+        </div>
+        {journalDates.length === 0 ? (
+          <div style={{ padding: '20px', fontSize: 12, color: 'var(--text3)' }}>No journal entries yet</div>
+        ) : (
+          journalDates.map((date, i) => {
+            const entry = journalEntries[date] ?? ''
+            const mood = moodLog[date]
+            const dateLabel = new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
+              weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+            })
+            return (
+              <div key={date} style={{ padding: '14px 20px', borderBottom: i < journalDates.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <div style={{ fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--gold)', fontFamily: 'var(--font-dm)', fontWeight: 700 }}>
+                    {dateLabel}
+                  </div>
+                  {mood && (
+                    <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px' }}>
+                      {mood}
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {entry}
+                </div>
+              </div>
+            )
+          })
         )}
       </div>
 
