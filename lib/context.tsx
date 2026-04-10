@@ -218,6 +218,11 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
   // Track whether the user has dispatched actions before DB load finishes
   const userEditedRef = useRef(false)
   const dbLoadDoneRef = useRef(false)
+  // Fingerprint of the last vision-image set we shipped to the server, so we
+  // don't re-send images on every unrelated state change. Vision images can be
+  // hundreds of KB each — sending them with every habit toggle blows past the
+  // server-action body limit and slows the whole app down.
+  const lastImagesFingerprintRef = useRef<string | null>(null)
 
   // Wrap dispatch to detect user edits during DB load
   const trackedDispatch = useCallback((action: Action) => {
@@ -313,6 +318,13 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
         if (visionImageBase64) visionImages[rest.id] = visionImageBase64
         return rest
       })
+      // Only ship vision images when the set has actually changed since the
+      // last successful sync. Fingerprint by id + length so we detect adds,
+      // removals, and replacements without serializing the whole base64 blob.
+      const fingerprint = Object.keys(visionImages).sort()
+        .map(id => `${id}:${visionImages[id].length}`)
+        .join('|')
+      const imagesChanged = fingerprint !== lastImagesFingerprintRef.current
       const appStateForDB = { ...state, goals: goalsWithoutImages }
       syncProfile({
         displayName: state.playerName,
@@ -323,12 +335,15 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
         journalDates: Object.keys(state.journalEntries ?? {}).filter(d => state.journalEntries[d]),
         kanbanDone: state.kanban.filter(k => k.column === 'done').length,
         appState: appStateForDB as Parameters<typeof syncProfile>[0]['appState'],
-        visionImages,
+        visionImages: imagesChanged ? visionImages : undefined,
       }).then(result => {
         if (result?.error) {
           setSaveStatus('error')
           setTimeout(() => setSaveStatus('idle'), 5000)
         } else {
+          // Only record the fingerprint after a successful save, so a failed
+          // sync doesn't trick us into skipping images on the retry.
+          if (imagesChanged) lastImagesFingerprintRef.current = fingerprint
           setSaveStatus('saved')
           setTimeout(() => setSaveStatus('idle'), 1200)
         }
