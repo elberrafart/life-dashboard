@@ -39,6 +39,12 @@ export async function saveOnboarding(
 
   const supabase = createAdminClient()
   const displayName = [firstName, lastName].filter(Boolean).join(' ')
+  // First + last name are individually capped at 50, but " " between them
+  // means a 50/50 pair concatenates to 101 chars and would later be rejected
+  // by syncProfile's MAX_DISPLAY_NAME = 100. Catch it here with a clear error.
+  if (displayName.length > 100) {
+    return { error: 'First name and last name combined must be 100 characters or less.' }
+  }
 
   // Initialize app_state so the dashboard has profile data immediately
   const initialAppState = {

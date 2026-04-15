@@ -151,6 +151,23 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           <span style={{ fontSize: 18 }}>⚙️</span> Settings
         </button>
 
+        <a
+          href="https://links.brussai.com/widget/booking/e8PONJAsyiWBNnf1xkAt"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setDrawerOpen(false)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            background: 'var(--gold, #f5c518)', color: '#0a0a08',
+            padding: '12px', borderRadius: 8, margin: '8px 0 12px',
+            fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase',
+            fontFamily: 'var(--font-dm)', textDecoration: 'none',
+            boxShadow: '0 0 12px rgba(245,197,24,0.25)',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>📅</span> Book Now
+        </a>
+
         <Link href="/leaderboard" style={drawerLinkStyle}>
           <span style={{ fontSize: 18 }}>🏆</span> Leaderboard
         </Link>
@@ -268,6 +285,24 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           <div style={{ fontSize: 11, letterSpacing: 1, color: 'var(--text3)', textTransform: 'uppercase' }}>{today}</div>
           <button onClick={onFeedOpen} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, padding: 8, borderRadius: 8, transition: 'color 150ms' }} title="XP Feed" onMouseOver={e => (e.currentTarget.style.color = 'var(--silver)')} onMouseOut={e => (e.currentTarget.style.color = 'var(--text3)')}>🔔</button>
           <button onClick={onSettingsOpen} style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--silver2)', fontSize: 20, padding: '7px 10px', borderRadius: 8, transition: 'all 150ms', lineHeight: 1 }} title="Settings" onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }} onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>⚙</button>
+          <a
+            href="https://links.brussai.com/widget/booking/e8PONJAsyiWBNnf1xkAt"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--gold, #f5c518)', color: '#0a0a08',
+              border: '1px solid var(--gold, #f5c518)', borderRadius: 8,
+              padding: '8px 14px', fontSize: 11, fontWeight: 800,
+              letterSpacing: 1.5, textTransform: 'uppercase',
+              transition: 'all 150ms', fontFamily: 'var(--font-dm)',
+              textDecoration: 'none',
+              boxShadow: '0 0 10px rgba(245,197,24,0.35)',
+            }}
+            onMouseOver={e => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(245,197,24,0.55)' }}
+            onMouseOut={e => { e.currentTarget.style.filter = 'none'; e.currentTarget.style.boxShadow = '0 0 10px rgba(245,197,24,0.35)' }}>
+            📅 Book Now
+          </a>
           <Link href="/leaderboard" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)', textDecoration: 'none' }}
             onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
             onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>
@@ -303,7 +338,25 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           </div>
         </div>
 
-        {/* ── MOBILE: hamburger ── */}
+        {/* ── MOBILE: Book Now + hamburger ── */}
+        <a
+          className="header-show-mobile"
+          href="https://links.brussai.com/widget/booking/e8PONJAsyiWBNnf1xkAt"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            alignItems: 'center', justifyContent: 'center', gap: 4,
+            background: 'var(--gold, #f5c518)', color: '#0a0a08',
+            border: '1px solid var(--gold, #f5c518)', borderRadius: 8,
+            padding: '7px 10px', fontSize: 10, fontWeight: 800,
+            letterSpacing: 1, textTransform: 'uppercase',
+            fontFamily: 'var(--font-dm)', textDecoration: 'none',
+            flexShrink: 0, lineHeight: 1,
+            boxShadow: '0 0 8px rgba(245,197,24,0.35)',
+          }}
+        >
+          <span style={{ fontSize: 12 }}>📅</span> Book
+        </a>
         <button
           className="header-show-mobile"
           onClick={() => setDrawerOpen(true)}

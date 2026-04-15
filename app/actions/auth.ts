@@ -2,6 +2,7 @@
 import { createClient, getSessionUser } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { rateLimit } from '@/lib/rate-limit'
+import { env } from '@/lib/env'
 import { redirect } from 'next/navigation'
 
 export type LoginState = { error?: string } | undefined
@@ -51,10 +52,9 @@ export async function resetPassword(_state: ResetPasswordState, formData: FormDa
     return { error: 'Too many reset requests. Please try again later.' }
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
   const supabase = createAdminClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback?type=recovery`,
+    redirectTo: `${env.SITE_URL}/auth/callback?type=recovery`,
   })
 
   if (error) return { error: error.message }
@@ -76,10 +76,9 @@ export async function sendSelfPasswordReset(): Promise<{ error?: string; success
     return { error: 'Too many reset requests. Please try again later.' }
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
   const supabase = createAdminClient()
   const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-    redirectTo: `${siteUrl}/auth/callback?type=recovery`,
+    redirectTo: `${env.SITE_URL}/auth/callback?type=recovery`,
   })
   if (error) return { error: error.message }
   return { success: `Reset link sent to ${user.email}` }

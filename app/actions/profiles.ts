@@ -15,6 +15,27 @@ const MAX_VISION_IMAGES = 20
 const MAX_VISION_IMAGE_BYTES = 3 * 1024 * 1024
 const MAX_APP_STATE_BYTES = 5 * 1024 * 1024 // 5 MB total app state
 
+// YYYY-MM-DD — used to validate journal date keys before they hit the DB.
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+// Per-field caps for profile columns extracted from the appState blob.
+// These mirror the limits enforced at onboarding so the client cannot
+// bypass them by writing arbitrary values into the dedicated columns.
+const PROFILE_FIELD_CAPS = {
+  firstName:   50,
+  lastName:    50,
+  profileYear: 50,
+  tagline:    100,
+} as const
+
+// Trim a value, return null unless it's a non-empty string within the cap.
+function safeProfileString(v: unknown, maxLen: number): string | null {
+  if (typeof v !== 'string') return null
+  const trimmed = v.trim()
+  if (trimmed.length === 0 || trimmed.length > maxLen) return null
+  return trimmed
+}
+
 export async function syncProfile(data: {
   displayName: string
   xpTotal: number
@@ -37,6 +58,11 @@ export async function syncProfile(data: {
   if (!Array.isArray(data.goals) || data.goals.length > MAX_GOALS) return { error: 'Too many goals' }
   if (!Array.isArray(data.habits) || data.habits.length > MAX_HABITS) return { error: 'Too many habits' }
   if (!Array.isArray(data.journalDates) || data.journalDates.length > MAX_JOURNAL_DATES) return { error: 'Too many journal dates' }
+  // Journal dates become column data; reject anything that isn't a literal
+  // YYYY-MM-DD string so the client can't smuggle arbitrary keys.
+  if (data.journalDates.some(d => typeof d !== 'string' || !ISO_DATE_RE.test(d))) {
+    return { error: 'Invalid journal date format' }
+  }
 
   // Reject oversized app state payloads
   if (data.appState) {
@@ -67,12 +93,16 @@ export async function syncProfile(data: {
 
   const supabase = await createClient()
 
-  // Extract profile fields from appState to keep individual columns in sync
-  const profileFields = data.appState ? {
-    first_name: (data.appState as Record<string, unknown>).firstName as string || null,
-    last_name: (data.appState as Record<string, unknown>).lastName as string || null,
-    profile_year: (data.appState as Record<string, unknown>).profileYear as string || null,
-    tagline: (data.appState as Record<string, unknown>).tagline as string || null,
+  // Extract profile fields from appState to keep individual columns in sync.
+  // Each field is type-checked, trimmed, and length-capped before it touches
+  // the DB so a malicious or buggy client can't bypass the onboarding limits
+  // by syncing arbitrary values into these dedicated columns.
+  const appStateRaw = data.appState as Record<string, unknown> | undefined
+  const profileFields = appStateRaw ? {
+    first_name:   safeProfileString(appStateRaw.firstName,   PROFILE_FIELD_CAPS.firstName),
+    last_name:    safeProfileString(appStateRaw.lastName,    PROFILE_FIELD_CAPS.lastName),
+    profile_year: safeProfileString(appStateRaw.profileYear, PROFILE_FIELD_CAPS.profileYear),
+    tagline:      safeProfileString(appStateRaw.tagline,     PROFILE_FIELD_CAPS.tagline),
   } : {}
 
   // Save app state first (small payload — must not fail due to image size)
