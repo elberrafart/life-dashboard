@@ -6,10 +6,9 @@ export default function MotivationalQuote() {
   const [visible, setVisible] = useState(false)
   const quote = getDailyQuote()
 
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 400)
-    return () => clearTimeout(t)
-  }, [])
+  // Flip to visible on mount (not during SSR) so getDailyQuote's client-local
+  // day-of-year doesn't produce a hydration mismatch against the server's UTC.
+  useEffect(() => { setVisible(true) }, [])
 
   return (
     <div style={{

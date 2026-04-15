@@ -5,6 +5,7 @@ import React, {
   useReducer,
   useEffect,
   useCallback,
+  useMemo,
   useState,
   useRef,
   ReactNode,
@@ -360,29 +361,37 @@ export function AppProvider({ children, userId }: { children: ReactNode; userId?
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [state, loaded])
 
-  const totalXP = state
-    ? state.goals.reduce((sum, g) => sum + g.xp, 0) + (state.habitXP ?? 0)
-    : 0
+  const totalXP = useMemo(
+    () => state.goals.reduce((sum, g) => sum + g.xp, 0) + (state.habitXP ?? 0),
+    [state.goals, state.habitXP],
+  )
+
+  // Pre-index habit and task XP by id so todayXP is O(checked) instead of
+  // O(checked × goals × tasks). Matters for users with many goals + a full
+  // day of habit toggles — the old nested find ran on every state change.
+  const habitXPById = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const h of state.habits) m.set(h.id, h.xp ?? 0)
+    return m
+  }, [state.habits])
+
+  const taskXPById = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const g of state.goals) for (const t of g.tasks) m.set(t.id, t.xp)
+    return m
+  }, [state.goals])
 
   const todayKey = getTodayKey()
-  const todayXP = state
-    ? Object.entries(state.checked)
-        .filter(([key, val]) => val && key.startsWith(todayKey))
-        .reduce((sum, [key]) => {
-          const parts = key.split('_')
-          if (parts[1] === 'h') {
-            const habit = state.habits.find(h => h.id === parts[2])
-            return sum + (habit?.xp ?? 0)
-          }
-          if (parts[1] === 't') {
-            for (const goal of state.goals) {
-              const task = goal.tasks.find(t => t.id === parts[2])
-              if (task) return sum + task.xp
-            }
-          }
-          return sum
-        }, 0)
-    : 0
+  const todayXP = useMemo(() => {
+    let sum = 0
+    for (const key in state.checked) {
+      if (!state.checked[key] || !key.startsWith(todayKey)) continue
+      const parts = key.split('_')
+      if (parts[1] === 'h') sum += habitXPById.get(parts[2]) ?? 0
+      else if (parts[1] === 't') sum += taskXPById.get(parts[2]) ?? 0
+    }
+    return sum
+  }, [state.checked, todayKey, habitXPById, taskXPById])
 
   const triggerFloatingXP = useCallback((xp: number, x: number, y: number) => {
     const id = `fxp-${Date.now()}-${Math.random()}`

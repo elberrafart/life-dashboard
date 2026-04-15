@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
       // per-app-state caps server-side.
       bodySizeLimit: '10mb',
     },
+    // Tree-shake unused exports from large packages. Next.js emits per-export
+    // barrel files at build time, shrinking the client bundle.
+    optimizePackageImports: ['@supabase/supabase-js', '@supabase/ssr'],
   },
 };
 
