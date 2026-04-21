@@ -49,12 +49,14 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
       <style>{`
         .header-hide-mobile { display: flex; }
         .header-show-mobile { display: none; }
-        .header-logo-text { font-size: 28px; }
+        .header-logo-text { font-size: 36px; letter-spacing: 4px; }
+        .left-nav { display: flex; }
         @media (max-width: 768px) {
           .header-hide-mobile { display: none !important; }
           .header-show-mobile { display: flex !important; }
           .header-padding { padding: 12px 16px !important; gap: 12px !important; }
-          .header-logo-text { font-size: 20px; letter-spacing: 2px; }
+          .header-logo-text { font-size: 24px; letter-spacing: 2.5px; }
+          .left-nav { display: none !important; }
         }
         .nav-drawer {
           transform: translateX(100%);
@@ -63,6 +65,17 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
         .nav-drawer.open {
           transform: translateX(0);
         }
+        .left-nav-item {
+          display: flex; align-items: center; gap: 10px;
+          background: var(--surface); border: 1px solid var(--border);
+          border-radius: 8px; padding: 10px 14px;
+          color: var(--silver2); font-size: 12px; font-weight: 600;
+          letter-spacing: 1.5px; text-transform: uppercase;
+          transition: all 150ms; font-family: var(--font-dm);
+          text-decoration: none; cursor: pointer; width: 100%;
+        }
+        .left-nav-item:hover { border-color: var(--gold); color: var(--gold); }
+        .left-nav-signout:hover { border-color: var(--red) !important; color: var(--red) !important; }
       `}</style>
 
       {ranksOpen && <RanksModal onClose={() => setRanksOpen(false)} currentLevel={levelInfo.level} />}
@@ -159,7 +172,7 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             background: 'var(--gold, #f5c518)', color: '#0a0a08',
-            padding: '12px', borderRadius: 8, margin: '8px 0 12px',
+            padding: '12px', borderRadius: 8, margin: '8px 0 8px',
             fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase',
             fontFamily: 'var(--font-dm)', textDecoration: 'none',
             boxShadow: '0 0 12px rgba(245,197,24,0.25)',
@@ -168,8 +181,37 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           <span style={{ fontSize: 14 }}>📅</span> Book Now
         </a>
 
+        <a
+          href="https://wa.me/17783219094"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setDrawerOpen(false)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            background: 'rgba(37,211,102,0.1)', color: '#25D366',
+            border: '1px solid rgba(37,211,102,0.35)',
+            padding: '12px', borderRadius: 8, margin: '0 0 12px',
+            fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase',
+            fontFamily: 'var(--font-dm)', textDecoration: 'none',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>📞</span> Message Andrew
+        </a>
+
         <Link href="/leaderboard" style={drawerLinkStyle}>
           <span style={{ fontSize: 18 }}>🏆</span> Leaderboard
+        </Link>
+        <Link href="/kanban" style={drawerLinkStyle}>
+          <span style={{ fontSize: 18 }}>📋</span> Kanban
+        </Link>
+        <Link href="/checkins" style={drawerLinkStyle}>
+          <span style={{ fontSize: 18 }}>✅</span> Check-Ins
+        </Link>
+        <Link href="/knowledge" style={drawerLinkStyle}>
+          <span style={{ fontSize: 18 }}>📚</span> Knowledge
+        </Link>
+        <Link href="/identity" style={drawerLinkStyle}>
+          <span style={{ fontSize: 18 }}>🧠</span> Identity
         </Link>
         {isAdmin && (
           <Link href="/admin/clients" style={drawerLinkStyle}>
@@ -283,52 +325,25 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
         {/* ── DESKTOP RIGHT ── */}
         <div className="header-hide-mobile" style={{ alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <div style={{ fontSize: 11, letterSpacing: 1, color: 'var(--text3)', textTransform: 'uppercase' }}>{today}</div>
-          <button onClick={onFeedOpen} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, padding: 8, borderRadius: 8, transition: 'color 150ms' }} title="XP Feed" onMouseOver={e => (e.currentTarget.style.color = 'var(--silver)')} onMouseOut={e => (e.currentTarget.style.color = 'var(--text3)')}>🔔</button>
-          <button onClick={onSettingsOpen} style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--silver2)', fontSize: 20, padding: '7px 10px', borderRadius: 8, transition: 'all 150ms', lineHeight: 1 }} title="Settings" onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }} onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>⚙</button>
           <a
-            href="https://links.brussai.com/widget/booking/e8PONJAsyiWBNnf1xkAt"
+            href="https://wa.me/17783219094"
             target="_blank"
             rel="noopener noreferrer"
+            title="Message Andrew on WhatsApp"
             style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: 'var(--gold, #f5c518)', color: '#0a0a08',
-              border: '1px solid var(--gold, #f5c518)', borderRadius: 8,
-              padding: '8px 14px', fontSize: 11, fontWeight: 800,
-              letterSpacing: 1.5, textTransform: 'uppercase',
-              transition: 'all 150ms', fontFamily: 'var(--font-dm)',
-              textDecoration: 'none',
-              boxShadow: '0 0 10px rgba(245,197,24,0.35)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.35)',
+              borderRadius: 8, padding: '7px 10px', color: '#25D366',
+              fontSize: 18, lineHeight: 1, textDecoration: 'none',
+              transition: 'all 150ms',
             }}
-            onMouseOver={e => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(245,197,24,0.55)' }}
-            onMouseOut={e => { e.currentTarget.style.filter = 'none'; e.currentTarget.style.boxShadow = '0 0 10px rgba(245,197,24,0.35)' }}>
-            📅 Book Now
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.2)'; e.currentTarget.style.borderColor = '#25D366' }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.1)'; e.currentTarget.style.borderColor = 'rgba(37,211,102,0.35)' }}
+          >
+            📞
           </a>
-          <Link href="/leaderboard" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)', textDecoration: 'none' }}
-            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
-            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>
-            🏆 Leaderboard
-          </Link>
-          {isAdmin && (
-            <Link href="/admin/clients" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)', textDecoration: 'none' }}
-              onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
-              onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>
-              👥 Clients
-            </Link>
-          )}
-          {isAdmin && (
-            <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)', textDecoration: 'none' }}
-              onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
-              onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>
-              ⚡ Admin
-            </Link>
-          )}
-          <form action={logout}>
-            <button type="submit" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', color: 'var(--silver2)', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 150ms', fontFamily: 'var(--font-dm)' }}
-              onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--red)'; e.currentTarget.style.color = 'var(--red)' }}
-              onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>
-              <span style={{ fontSize: 14, lineHeight: 1 }}>⏻</span> Sign Out
-            </button>
-          </form>
+          <button onClick={onFeedOpen} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, padding: 8, borderRadius: 8, transition: 'color 150ms' }} title="XP Feed" onMouseOver={e => (e.currentTarget.style.color = 'var(--silver)')} onMouseOut={e => (e.currentTarget.style.color = 'var(--text3)')}>🔔</button>
+          <button onClick={onSettingsOpen} style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--silver2)', fontSize: 20, padding: '7px 10px', borderRadius: 8, transition: 'all 150ms', lineHeight: 1 }} title="Settings" onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }} onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>⚙</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: saveStatus === 'saved' ? 'rgba(39,174,96,0.12)' : saveStatus === 'error' ? 'rgba(220,80,60,0.12)' : 'var(--surface)', border: `1px solid ${saveStatus === 'saved' ? 'var(--green)' : saveStatus === 'error' ? 'rgba(220,80,60,0.6)' : 'var(--border2)'}`, color: saveStatus === 'saved' ? 'var(--green)' : saveStatus === 'error' ? '#f4b8ad' : saveStatus === 'saving' ? 'var(--text3)' : 'var(--silver2)', borderRadius: 8, padding: '8px 16px', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 400ms', fontFamily: 'var(--font-dm)', minWidth: 90, justifyContent: 'center' }}>
             {saveStatus === 'saving' && <span className="pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text3)', display: 'inline-block' }} />}
             {saveStatus === 'saved' ? '✓ Saved'
@@ -369,6 +384,74 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           </div>
         </button>
       </header>
+
+      {/* ── LEFT VERTICAL NAV (desktop only) ── */}
+      <aside
+        className="left-nav"
+        style={{
+          position: 'fixed', top: 85, left: 0, bottom: 0, width: 200,
+          background: 'rgba(10,10,8,0.97)', backdropFilter: 'blur(8px)',
+          borderRight: '1px solid var(--border)',
+          padding: '20px 14px',
+          flexDirection: 'column', gap: 8,
+          zIndex: 90, overflowY: 'auto',
+        }}
+      >
+        <a
+          href="https://links.brussai.com/widget/booking/e8PONJAsyiWBNnf1xkAt"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="left-nav-item"
+          style={{
+            background: 'var(--gold, #f5c518)', color: '#0a0a08',
+            border: '1px solid var(--gold, #f5c518)', fontWeight: 800,
+            boxShadow: '0 0 10px rgba(245,197,24,0.35)',
+            justifyContent: 'flex-start',
+          }}
+          onMouseOver={e => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(245,197,24,0.55)' }}
+          onMouseOut={e => { e.currentTarget.style.filter = 'none'; e.currentTarget.style.boxShadow = '0 0 10px rgba(245,197,24,0.35)' }}
+        >
+          <span style={{ fontSize: 14 }}>📅</span> Book Now
+        </a>
+
+        <Link href="/leaderboard" className="left-nav-item">
+          <span style={{ fontSize: 14 }}>🏆</span> Leaderboard
+        </Link>
+
+        <Link href="/kanban" className="left-nav-item">
+          <span style={{ fontSize: 14 }}>📋</span> Kanban
+        </Link>
+
+        <Link href="/checkins" className="left-nav-item">
+          <span style={{ fontSize: 14 }}>✅</span> Check-Ins
+        </Link>
+
+        <Link href="/knowledge" className="left-nav-item">
+          <span style={{ fontSize: 14 }}>📚</span> Knowledge
+        </Link>
+
+        <Link href="/identity" className="left-nav-item">
+          <span style={{ fontSize: 14 }}>🧠</span> Identity
+        </Link>
+
+        {isAdmin && (
+          <Link href="/admin/clients" className="left-nav-item">
+            <span style={{ fontSize: 14 }}>👥</span> Clients
+          </Link>
+        )}
+
+        {isAdmin && (
+          <Link href="/admin" className="left-nav-item">
+            <span style={{ fontSize: 14 }}>⚡</span> Admin
+          </Link>
+        )}
+
+        <form action={logout} style={{ marginTop: 'auto' }}>
+          <button type="submit" className="left-nav-item left-nav-signout">
+            <span style={{ fontSize: 14, lineHeight: 1 }}>⏻</span> Sign Out
+          </button>
+        </form>
+      </aside>
     </>
   )
 }
