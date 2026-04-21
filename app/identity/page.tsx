@@ -2,7 +2,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Phase1 from '@/components/identity/Phase1'
-import PhaseStub from '@/components/identity/PhaseStub'
+import Phase2 from '@/components/identity/Phase2'
+import Phase3 from '@/components/identity/Phase3'
+import Phase4 from '@/components/identity/Phase4'
 
 type Tab = 1 | 2 | 3 | 4
 
@@ -91,33 +93,9 @@ export default function IdentityPage() {
 
       {/* Tab content */}
       {tab === 1 && <Phase1 />}
-      {tab === 2 && (
-        <PhaseStub
-          phase={2}
-          weeks="4–8"
-          title="Identity Integration"
-          anchor="The Man Who Commits"
-          anchorSub="You are no longer testing the waters. You are all in."
-        />
-      )}
-      {tab === 3 && (
-        <PhaseStub
-          phase={3}
-          weeks="8–16"
-          title="Identity Anchors"
-          anchor="The Man Who Executes"
-          anchorSub="Phase 2 proved you can commit. Phase 3 is where you build unstoppable momentum and visible transformation."
-        />
-      )}
-      {tab === 4 && (
-        <PhaseStub
-          phase={4}
-          weeks="16+"
-          title="Long-Term Sovereignty"
-          anchor="The Man Who Leads"
-          anchorSub="You're no longer 'becoming.' You are. This is where your identity becomes permanent and you step into leadership."
-        />
-      )}
+      {tab === 2 && <Phase2 />}
+      {tab === 3 && <Phase3 />}
+      {tab === 4 && <Phase4 />}
     </div>
   )
 }
