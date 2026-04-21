@@ -2,7 +2,7 @@
 import { createAdminClient } from '@/lib/supabase-admin'
 import { createClient, getSessionUser } from '@/lib/supabase-server'
 import { checkIsAdmin } from './admin'
-import { AppState } from '@/lib/types'
+import { AppState, Roadmap } from '@/lib/types'
 
 // Payload limits to prevent storage abuse
 const MAX_DISPLAY_NAME = 100
@@ -218,10 +218,14 @@ export async function getAllProfiles(): Promise<UserProfile[]> {
   const isAdmin = await checkIsAdmin()
   if (!isAdmin) throw new Error('Unauthorized')
 
+  // Admin client list only needs summary columns — never pull `app_state` or
+  // `vision_images`, which can be multi-MB JSONB blobs per user and turn this
+  // into a 2-3 second query. Full app_state is fetched on-demand by the
+  // client detail view via `adminGetUserAppState`.
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('*')
+    .select('user_id, user_email, display_name, xp_total, streak, goals, habits, journal_dates, kanban_done, updated_at')
     .order('updated_at', { ascending: false })
 
   if (error) throw new Error(error.message)
@@ -301,6 +305,87 @@ export async function adminSetUserLists(
         habits: patch.habits.map(h => ({ id: h.id, label: h.label })),
       }),
     })
+    .eq('user_id', userId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ── Roadmap ──────────────────────────────────────────────────────────────────
+// Stored in its own `roadmap` JSONB column (not inside app_state) because the
+// client's "local-wins" sync loop in lib/context.tsx would otherwise overwrite
+// admin edits. Only admins write; the owning user reads their own row via RLS.
+
+const MAX_ROADMAP_PHASES = 20
+const MAX_ROADMAP_BYTES  = 64 * 1024
+const MAX_PHASE_LABEL    = 100
+const MAX_PHASE_DESC     = 1000
+
+function validateRoadmap(roadmap: Roadmap): string | null {
+  if (!roadmap || typeof roadmap !== 'object') return 'Invalid roadmap'
+  if (!Array.isArray(roadmap.phases)) return 'Invalid phases'
+  if (roadmap.phases.length > MAX_ROADMAP_PHASES) return 'Too many phases'
+  const size = new TextEncoder().encode(JSON.stringify(roadmap)).length
+  if (size > MAX_ROADMAP_BYTES) return 'Roadmap too large'
+  for (const p of roadmap.phases) {
+    if (typeof p.id !== 'string' || p.id.length > 60) return 'Invalid phase id'
+    if (typeof p.number !== 'number' || p.number < 0 || p.number > 99) return 'Invalid phase number'
+    if (typeof p.emoji !== 'string' || p.emoji.length > 8) return 'Invalid emoji'
+    if (typeof p.label !== 'string' || p.label.length > MAX_PHASE_LABEL) return 'Invalid label'
+    if (typeof p.description !== 'string' || p.description.length > MAX_PHASE_DESC) return 'Invalid description'
+    if (typeof p.weekStart !== 'number' || p.weekStart < 0 || p.weekStart > 520) return 'Invalid weekStart'
+    if (typeof p.weekEnd   !== 'number' || p.weekEnd   < 0 || p.weekEnd   > 520) return 'Invalid weekEnd'
+    if (p.startedAt   !== undefined && (typeof p.startedAt   !== 'string' || p.startedAt.length   > 40)) return 'Invalid startedAt'
+    if (p.completedAt !== undefined && (typeof p.completedAt !== 'string' || p.completedAt.length > 40)) return 'Invalid completedAt'
+  }
+  if (roadmap.title !== undefined && (typeof roadmap.title !== 'string' || roadmap.title.length > 120)) return 'Invalid title'
+  if (roadmap.currentWeekOverride !== undefined &&
+      (typeof roadmap.currentWeekOverride !== 'number' || roadmap.currentWeekOverride < 0 || roadmap.currentWeekOverride > 520)) {
+    return 'Invalid currentWeekOverride'
+  }
+  return null
+}
+
+export async function getMyRoadmap(): Promise<Roadmap | null> {
+  const user = await getSessionUser()
+  if (!user) return null
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('roadmap')
+    .eq('user_id', user.id)
+    .single()
+  return (data?.roadmap as Roadmap) ?? null
+}
+
+export async function adminGetRoadmap(userId: string): Promise<Roadmap | null> {
+  const isAdmin = await checkIsAdmin()
+  if (!isAdmin) throw new Error('Unauthorized')
+  if (typeof userId !== 'string' || !/^[0-9a-f-]{36}$/i.test(userId)) throw new Error('Invalid user ID')
+
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('roadmap')
+    .eq('user_id', userId)
+    .single()
+  return (data?.roadmap as Roadmap) ?? null
+}
+
+export async function adminSetRoadmap(userId: string, roadmap: Roadmap | null): Promise<{ error?: string }> {
+  const isAdmin = await checkIsAdmin()
+  if (!isAdmin) throw new Error('Unauthorized')
+  if (typeof userId !== 'string' || !/^[0-9a-f-]{36}$/i.test(userId)) return { error: 'Invalid user ID' }
+
+  if (roadmap !== null) {
+    const err = validateRoadmap(roadmap)
+    if (err) return { error: err }
+  }
+
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({ roadmap })
     .eq('user_id', userId)
 
   if (error) return { error: error.message }

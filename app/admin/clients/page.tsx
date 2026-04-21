@@ -1,17 +1,20 @@
 'use client'
 import { useState, useEffect } from 'react'
 import {
-  getAllProfiles, getProfileCheckIns, adminGetUserAppState, adminSetUserLists, type UserProfile,
+  getAllProfiles, getProfileCheckIns, adminGetUserAppState, adminSetUserLists,
+  adminGetRoadmap, adminSetRoadmap, type UserProfile,
 } from '@/app/actions/profiles'
-import { getLevelInfo } from '@/lib/types'
+import { getLevelInfo, DEFAULT_ROADMAP_PHASES, DEFAULT_ROADMAP_TITLE } from '@/lib/types'
+import { fetchCached, invalidate } from '@/lib/dataCache'
 import CheckInCalendar from '@/components/CheckInCalendar'
-import type { AppState, Habit, Goal, KanbanCard } from '@/lib/types'
+import RoadmapTimeline from '@/components/RoadmapTimeline'
+import type { AppState, Habit, Goal, KanbanCard, Roadmap, RoadmapPhase } from '@/lib/types'
 
 type CheckIn = {
   id: string; date: string; mood: string | null; note: string | null
   xp_today: number; habits_completed: number; created_at: string
 }
-type EditSection = 'habits' | 'goals' | 'kanban' | null
+type EditSection = 'habits' | 'goals' | 'kanban' | 'roadmap' | null
 
 function uid() { return `${Date.now()}-${Math.random().toString(36).slice(2)}` }
 
@@ -61,6 +64,8 @@ function ClientDetail({ profile, onBack }: { profile: UserProfile; onBack: () =>
   const [editHabits, setEditHabits] = useState<Habit[]>([])
   const [editGoals, setEditGoals] = useState<Goal[]>([])
   const [editKanban, setEditKanban] = useState<KanbanCard[]>([])
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null)
+  const [editRoadmap, setEditRoadmap] = useState<Roadmap | null>(null)
 
   // Add-form state
   const [newHabitLabel, setNewHabitLabel] = useState('')
@@ -78,6 +83,9 @@ function ClientDetail({ profile, onBack }: { profile: UserProfile; onBack: () =>
     adminGetUserAppState(profile.user_id)
       .then(s => setFullState(s))
       .catch(() => {})
+    adminGetRoadmap(profile.user_id)
+      .then(r => setRoadmap(r))
+      .catch(() => {})
   }, [profile.user_id])
 
   function startEdit(section: EditSection) {
@@ -86,13 +94,28 @@ function ClientDetail({ profile, onBack }: { profile: UserProfile; onBack: () =>
     if (section === 'habits') setEditHabits(fullState?.habits ?? [])
     if (section === 'goals') setEditGoals(fullState?.goals ?? [])
     if (section === 'kanban') setEditKanban((fullState?.kanban ?? []).filter(k => k.column !== 'done'))
+    if (section === 'roadmap') setEditRoadmap(roadmap ? structuredClone(roadmap) : { title: DEFAULT_ROADMAP_TITLE, phases: [] })
     setNewHabitLabel(''); setNewGoalEmoji(''); setNewGoalName(''); setNewGoalCategory(''); setNewCardName('')
   }
 
-  function cancelEdit() { setEditSection(null); setSaveError(null) }
+  function cancelEdit() { setEditSection(null); setSaveError(null); setEditRoadmap(null) }
 
   async function saveSection(section: EditSection) {
     setSaving(true); setSaveError(null)
+
+    if (section === 'roadmap') {
+      const result = await adminSetRoadmap(profile.user_id, editRoadmap)
+      setSaving(false)
+      if (result.error) { setSaveError(result.error); return }
+      setRoadmap(editRoadmap)
+      // If the admin edited their own roadmap, clear the cached user copy
+      // so next dashboard visit shows the change immediately.
+      invalidate('myRoadmap')
+      invalidate('allProfiles')
+      setEditSection(null); setEditRoadmap(null)
+      return
+    }
+
     const patch =
       section === 'habits' ? { habits: editHabits } :
       section === 'goals'  ? { goals: editGoals } :
@@ -108,6 +131,7 @@ function ClientDetail({ profile, onBack }: { profile: UserProfile; onBack: () =>
     if (result.error) { setSaveError(result.error); return }
     // Update local fullState to reflect saved changes
     setFullState(prev => prev ? { ...prev, ...patch } : prev)
+    invalidate('allProfiles')
     setEditSection(null)
   }
 
@@ -174,6 +198,162 @@ function ClientDetail({ profile, onBack }: { profile: UserProfile; onBack: () =>
             <div style={{ fontSize: 20, fontFamily: 'var(--font-bebas)', letterSpacing: 2, color: 'var(--gold)' }}>{s.value}</div>
           </div>
         ))}
+      </div>
+
+      {/* Roadmap */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 20 }}>
+        <SectionBar
+          title={`Roadmap (${editSection === 'roadmap' ? editRoadmap?.phases.length ?? 0 : roadmap?.phases.length ?? 0} phases)`}
+          editing={editSection === 'roadmap'} saving={saving}
+          onEdit={() => startEdit('roadmap')}
+          onSave={() => saveSection('roadmap')}
+          onCancel={cancelEdit}
+        />
+        {editSection === 'roadmap' && editRoadmap ? (
+          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Title + current week override */}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 240px', minWidth: 200 }}>
+                <label style={{ display: 'block', fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 4 }}>Title</label>
+                <input
+                  style={{ ...inputStyle, width: '100%' }}
+                  value={editRoadmap.title ?? ''}
+                  placeholder={DEFAULT_ROADMAP_TITLE}
+                  onChange={e => setEditRoadmap({ ...editRoadmap, title: e.target.value })}
+                />
+              </div>
+              <div style={{ width: 160 }}>
+                <label style={{ display: 'block', fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 4 }}>Current Week (override)</label>
+                <input
+                  type="number" min={0} max={520}
+                  style={{ ...inputStyle, width: '100%' }}
+                  value={editRoadmap.currentWeekOverride ?? ''}
+                  placeholder="auto"
+                  onChange={e => {
+                    const v = e.target.value === '' ? undefined : Number(e.target.value)
+                    setEditRoadmap({ ...editRoadmap, currentWeekOverride: v })
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Phase rows */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {editRoadmap.phases.map((p, idx) => {
+                const fieldLabel: React.CSSProperties = {
+                  display: 'block', fontSize: 9, letterSpacing: 1.5,
+                  textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 3,
+                  fontFamily: 'var(--font-dm)', fontWeight: 600,
+                }
+                return (
+                <div key={p.id} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8, alignItems: 'flex-end' }}>
+                    <div style={{ width: 56 }}>
+                      <label style={fieldLabel}>Phase #</label>
+                      <input style={{ ...inputStyle, width: '100%' }} type="number" min={0} max={99}
+                        value={p.number} onChange={e => {
+                          const v = Number(e.target.value) || 0
+                          setEditRoadmap({ ...editRoadmap, phases: editRoadmap.phases.map((x, i) => i === idx ? { ...x, number: v } : x) })
+                        }} />
+                    </div>
+                    <div style={{ width: 56 }}>
+                      <label style={fieldLabel}>Emoji</label>
+                      <input style={{ ...inputStyle, width: '100%' }} placeholder="🌱" maxLength={4}
+                        value={p.emoji} onChange={e => {
+                          setEditRoadmap({ ...editRoadmap, phases: editRoadmap.phases.map((x, i) => i === idx ? { ...x, emoji: e.target.value } : x) })
+                        }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 140 }}>
+                      <label style={fieldLabel}>Label</label>
+                      <input style={{ ...inputStyle, width: '100%' }} placeholder="e.g. Foundation"
+                        value={p.label} onChange={e => {
+                          setEditRoadmap({ ...editRoadmap, phases: editRoadmap.phases.map((x, i) => i === idx ? { ...x, label: e.target.value } : x) })
+                        }} />
+                    </div>
+                    <div style={{ width: 76 }}>
+                      <label style={fieldLabel}>Week Start</label>
+                      <input style={{ ...inputStyle, width: '100%' }} type="number" min={0} max={520}
+                        value={p.weekStart} onChange={e => {
+                          const v = Number(e.target.value) || 0
+                          setEditRoadmap({ ...editRoadmap, phases: editRoadmap.phases.map((x, i) => i === idx ? { ...x, weekStart: v } : x) })
+                        }} />
+                    </div>
+                    <div style={{ width: 76 }}>
+                      <label style={fieldLabel}>Week End</label>
+                      <input style={{ ...inputStyle, width: '100%' }} type="number" min={0} max={520}
+                        value={p.weekEnd} onChange={e => {
+                          const v = Number(e.target.value) || 0
+                          setEditRoadmap({ ...editRoadmap, phases: editRoadmap.phases.map((x, i) => i === idx ? { ...x, weekEnd: v } : x) })
+                        }} />
+                    </div>
+                    <button style={removeBtnStyle} onClick={() =>
+                      setEditRoadmap({ ...editRoadmap, phases: editRoadmap.phases.filter((_, i) => i !== idx) })
+                    }>Remove</button>
+                  </div>
+                  <textarea
+                    style={{ ...inputStyle, width: '100%', minHeight: 54, resize: 'vertical', fontFamily: 'var(--font-dm)' }}
+                    placeholder="Description"
+                    value={p.description} onChange={e => {
+                      setEditRoadmap({ ...editRoadmap, phases: editRoadmap.phases.map((x, i) => i === idx ? { ...x, description: e.target.value } : x) })
+                    }} />
+                  {/* Started / Completed controls */}
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1, textTransform: 'uppercase' }}>Started:</span>
+                    <span style={{ fontSize: 10, color: p.startedAt ? 'var(--gold)' : 'var(--text3)' }}>
+                      {p.startedAt ? new Date(p.startedAt).toLocaleDateString() : '—'}
+                    </span>
+                    <button style={{ ...removeBtnStyle, border: '1px solid var(--border2)', color: 'var(--text3)' }} onClick={() => {
+                      setEditRoadmap({ ...editRoadmap, phases: editRoadmap.phases.map((x, i) => i === idx ? { ...x, startedAt: p.startedAt ? undefined : new Date().toISOString() } : x) })
+                    }}>{p.startedAt ? 'Clear' : 'Start Now'}</button>
+
+                    <span style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1, textTransform: 'uppercase', marginLeft: 10 }}>Completed:</span>
+                    <span style={{ fontSize: 10, color: p.completedAt ? '#a3d977' : 'var(--text3)' }}>
+                      {p.completedAt ? new Date(p.completedAt).toLocaleDateString() : '—'}
+                    </span>
+                    <button style={{ ...removeBtnStyle, border: '1px solid var(--border2)', color: 'var(--text3)' }} onClick={() => {
+                      setEditRoadmap({ ...editRoadmap, phases: editRoadmap.phases.map((x, i) => i === idx ? { ...x, completedAt: p.completedAt ? undefined : new Date().toISOString() } : x) })
+                    }}>{p.completedAt ? 'Clear' : 'Mark Complete'}</button>
+                  </div>
+                </div>
+                )
+              })}
+            </div>
+
+            {/* Add / seed actions */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button style={addBtnStyle} onClick={() => {
+                const nextNum = (editRoadmap.phases[editRoadmap.phases.length - 1]?.number ?? 0) + 1
+                const newPhase: RoadmapPhase = {
+                  id: `p-${uid()}`, number: nextNum, emoji: '🎯',
+                  label: '', description: '', weekStart: 0, weekEnd: 0,
+                }
+                setEditRoadmap({ ...editRoadmap, phases: [...editRoadmap.phases, newPhase] })
+              }}>Add Phase</button>
+              {editRoadmap.phases.length === 0 && (
+                <button
+                  style={{ ...addBtnStyle, background: 'var(--surface2)', color: 'var(--silver)', border: '1px solid var(--border2)' }}
+                  onClick={() => setEditRoadmap({ ...editRoadmap, phases: DEFAULT_ROADMAP_PHASES.map(p => ({ ...p, id: `p-${uid()}` })) })}
+                >Seed 4-Phase Template</button>
+              )}
+              {editRoadmap.phases.length > 0 && (
+                <button
+                  style={{ ...removeBtnStyle }}
+                  onClick={() => setEditRoadmap({ ...editRoadmap, phases: [] })}
+                >Clear All Phases</button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            {!roadmap || roadmap.phases.length === 0 ? (
+              <div style={{ padding: '20px', fontSize: 12, color: 'var(--text3)' }}>No roadmap set. Click Edit to create one.</div>
+            ) : (
+              <div style={{ padding: '4px 0 16px' }}>
+                <RoadmapTimeline roadmap={roadmap} />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Goals */}
@@ -386,7 +566,7 @@ export default function ClientsPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getAllProfiles()
+    fetchCached('allProfiles', getAllProfiles, 30_000)
       .then(setProfiles)
       .catch(e => setError(e instanceof Error ? e.message : 'Failed to load'))
       .finally(() => setLoading(false))
