@@ -7,6 +7,34 @@ import { getTodayKey } from '@/lib/store'
 
 function generateId() { return `g-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }
 
+function XPRing({ completed, total, size = 46 }: { completed: number; total: number; size?: number }) {
+  const progress = total > 0 ? (completed / total) * 100 : 0
+  const stroke = 3
+  const r = (size - stroke) / 2
+  const cx = size / 2
+  const cy = size / 2
+  const c = 2 * Math.PI * r
+  const dash = (progress / 100) * c
+  return (
+    <svg width={size} height={size} style={{ flexShrink: 0 }} aria-label={`${completed} of ${total} tasks complete`}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--surface2)" strokeWidth={stroke} />
+      <circle
+        cx={cx} cy={cy} r={r} fill="none"
+        stroke="var(--gold)" strokeWidth={stroke} strokeLinecap="round"
+        strokeDasharray={`${dash} ${c}`}
+        transform={`rotate(-90 ${cx} ${cy})`}
+        style={{ transition: 'stroke-dasharray 400ms cubic-bezier(0.4,0,0.2,1)' }}
+      />
+      <text
+        x={cx} y={cy} textAnchor="middle" dominantBaseline="central"
+        style={{ fontSize: 10, fill: 'var(--silver)', fontFamily: 'var(--font-dm)', fontWeight: 700, letterSpacing: 0.5 }}
+      >
+        {total > 0 ? `${completed}/${total}` : '—'}
+      </text>
+    </svg>
+  )
+}
+
 export default function GoalsGrid() {
   const { state, dispatch, totalXP, awardGoalXP, removeGoalXP } = useApp()
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
@@ -57,6 +85,7 @@ export default function GoalsGrid() {
                     {totalTasks > 0 ? `${completedTasks}/${totalTasks} tasks today` : 'No tasks yet'} · {playerLevel.emoji} {playerLevel.name}
                   </div>
                 </div>
+                <XPRing completed={completedTasks} total={totalTasks} />
                 <button
                   onClick={() => setSelectedGoalId(goal.id)}
                   style={{
@@ -128,10 +157,6 @@ export default function GoalsGrid() {
                 </div>
               )}
 
-              {/* XP bar */}
-              <div style={{ marginTop: 12, height: 3, background: 'var(--surface2)', borderRadius: 99, overflow: 'hidden' }}>
-                <div className="xp-bar-fill" style={{ width: `${playerLevel.progress}%`, height: '100%', borderRadius: 99 }} />
-              </div>
             </div>
           )
         })}
