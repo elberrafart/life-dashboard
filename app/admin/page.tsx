@@ -244,25 +244,57 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4, gap: 10, flexWrap: 'wrap' }}>
         <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 32, letterSpacing: 5, color: 'var(--text)' }}>
           ADMIN PANEL
         </div>
-        <Link
-          href="/"
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 8, padding: '8px 16px', textDecoration: 'none',
-            color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5,
-            textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
-            transition: 'all 150ms',
-          }}
-          onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
-          onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
-        >
-          ← Home
-        </Link>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Link
+            href="/admin/dashboard"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '8px 16px', textDecoration: 'none',
+              color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5,
+              textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
+              transition: 'all 150ms',
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
+          >
+            📊 Dashboard
+          </Link>
+          <Link
+            href="/admin/knowledge"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '8px 16px', textDecoration: 'none',
+              color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5,
+              textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
+              transition: 'all 150ms',
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
+          >
+            📚 Knowledge Hub
+          </Link>
+          <Link
+            href="/"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '8px 16px', textDecoration: 'none',
+              color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5,
+              textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
+              transition: 'all 150ms',
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
+          >
+            ← Home
+          </Link>
+        </div>
       </div>
 
       {/* Tabs */}
