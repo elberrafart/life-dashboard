@@ -10,7 +10,7 @@ import React, {
   useRef,
   ReactNode,
 } from 'react'
-import { AppState, Goal, Habit, KanbanCard, XPEvent, getLevelInfo } from './types'
+import { AppState, Goal, Habit, KanbanCard, XPEvent, getLevelInfo, EMPTY_IDENTITY_WORKBOOK } from './types'
 import { loadState, loadStateAsync, saveState, loadImages, loadImagesAsync, getTodayKey } from './store'
 import { syncProfile, loadUserState } from '@/app/actions/profiles'
 import { initTheme } from './theme'
@@ -45,6 +45,9 @@ type Action =
   | { type: 'SAVE_JOURNAL'; payload: { date: string; text: string } }
   | { type: 'SAVE_MOOD'; payload: { date: string; mood: string } }
   | { type: 'SET_HIDE_FROM_LEADERBOARD'; payload: boolean }
+  | { type: 'SET_IDENTITY_FIELD'; payload: { key: string; value: string } }
+  | { type: 'TOGGLE_IDENTITY_CHECK'; payload: string }
+  | { type: 'SET_IDENTITY_LIST'; payload: { key: string; value: string[] } }
 
 type AppContextType = {
   state: AppState
@@ -183,6 +186,19 @@ function reducer(state: AppState, action: Action): AppState {
       }
     }
     case 'SET_HIDE_FROM_LEADERBOARD': return { ...state, hideFromLeaderboard: action.payload }
+    case 'SET_IDENTITY_FIELD': {
+      const wb = state.identityWorkbook ?? EMPTY_IDENTITY_WORKBOOK
+      return { ...state, identityWorkbook: { ...wb, fields: { ...wb.fields, [action.payload.key]: action.payload.value } } }
+    }
+    case 'TOGGLE_IDENTITY_CHECK': {
+      const wb = state.identityWorkbook ?? EMPTY_IDENTITY_WORKBOOK
+      const current = wb.checks[action.payload] ?? false
+      return { ...state, identityWorkbook: { ...wb, checks: { ...wb.checks, [action.payload]: !current } } }
+    }
+    case 'SET_IDENTITY_LIST': {
+      const wb = state.identityWorkbook ?? EMPTY_IDENTITY_WORKBOOK
+      return { ...state, identityWorkbook: { ...wb, lists: { ...wb.lists, [action.payload.key]: action.payload.value } } }
+    }
     default: return state
   }
 }
@@ -208,6 +224,7 @@ const PLACEHOLDER_STATE: AppState = {
   goalArchive: [],
   kanbanArchive: [],
   hideFromLeaderboard: false,
+  identityWorkbook: EMPTY_IDENTITY_WORKBOOK,
 }
 
 export function AppProvider({ children, userId }: { children: ReactNode; userId?: string }) {
