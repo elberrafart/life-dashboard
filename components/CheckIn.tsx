@@ -3,6 +3,7 @@ import { useState, useEffect, useTransition } from 'react'
 import { useApp } from '@/lib/context'
 import { submitCheckIn, getUserCheckIns, type CheckIn } from '@/app/actions/checkins'
 import CheckInCalendar from '@/components/CheckInCalendar'
+import { fetchCached, invalidate } from '@/lib/dataCache'
 
 const MOODS = [
   { emoji: '🔥', label: 'On Fire' },
@@ -25,8 +26,9 @@ export default function CheckIn() {
 
   useEffect(() => {
     // Single round trip: getUserCheckIns returns up to 90 days descending,
-    // so history[0] is today's check-in if one exists.
-    getUserCheckIns().then(setHistory)
+    // so history[0] is today's check-in if one exists. Cached so repeat
+    // mounts (returning to the dashboard / check-ins page) are instant.
+    fetchCached('userCheckIns', getUserCheckIns, 30_000).then(setHistory)
   }, [])
 
   const today = new Date().toISOString().split('T')[0]
@@ -43,7 +45,12 @@ export default function CheckIn() {
         return
       }
       setDone(true)
-      getUserCheckIns().then(setHistory)
+      invalidate('userCheckIns')
+      getUserCheckIns().then(h => {
+        setHistory(h)
+        // Warm the cache with the fresh result so the /checkins page uses it.
+        fetchCached('userCheckIns', () => Promise.resolve(h), 30_000)
+      })
     })
   }
 
