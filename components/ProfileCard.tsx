@@ -67,12 +67,12 @@ export default function ProfileCard() {
   return (
     <div style={{ padding: '20px 20px 0' }}>
       <style>{`
-        .profile-card-box { padding: 22px 28px; }
-        .profile-layout { display: flex; gap: 20px; align-items: flex-start; }
-        .profile-stats { flex-shrink: 0; min-width: 180px; max-width: 260px; }
+        .profile-card-box { padding: 32px 36px; }
+        .profile-layout { display: flex; gap: 24px; align-items: flex-start; }
+        .profile-stats { flex-shrink: 0; min-width: 200px; max-width: 280px; }
         @media (max-width: 640px) {
-          .profile-card-box { padding: 16px 18px !important; }
-          .profile-layout { flex-direction: column; gap: 14px; }
+          .profile-card-box { padding: 20px 20px !important; }
+          .profile-layout { flex-direction: column; gap: 16px; }
           .profile-stats { min-width: 0; max-width: none; width: 100%; }
         }
       `}</style>
@@ -83,7 +83,7 @@ export default function ProfileCard() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
               <div style={{
-                fontFamily: 'var(--font-bebas)', fontSize: 36, letterSpacing: 2,
+                fontFamily: 'var(--font-bebas)', fontSize: 52, letterSpacing: 3,
                 background: 'linear-gradient(135deg, var(--text) 0%, var(--silver) 100%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text', lineHeight: 1,
@@ -91,19 +91,19 @@ export default function ProfileCard() {
                 {displayName || 'Your Name'}
               </div>
               {state.profileYear && (
-                <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 16, letterSpacing: 3, color: 'var(--gold)', opacity: 0.8 }}>
+                <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 20, letterSpacing: 3, color: 'var(--gold)', opacity: 0.85 }}>
                   {state.profileYear}
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{levelInfo.emoji}</span>
-              <span style={{ fontSize: 11, color: 'var(--gold)', letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 22, lineHeight: 1 }}>{levelInfo.emoji}</span>
+              <span style={{ fontSize: 13, color: 'var(--gold)', letterSpacing: 1.8, textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 700 }}>
                 Lvl {levelInfo.level} — {levelInfo.name}
               </span>
             </div>
             {state.tagline && (
-              <div style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic', marginTop: 6, letterSpacing: 0.3 }}>
+              <div style={{ fontSize: 14, color: 'var(--silver)', fontStyle: 'italic', marginTop: 10, letterSpacing: 0.3 }}>
                 &ldquo;{state.tagline}&rdquo;
               </div>
             )}
