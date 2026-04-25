@@ -3,6 +3,7 @@ import { Bebas_Neue, DM_Sans } from 'next/font/google'
 import './globals.css'
 import { AppProvider } from '@/lib/context'
 import BackgroundFog from '@/components/BackgroundFog'
+import GlobalChrome from '@/components/GlobalChrome'
 import { getSessionUser } from '@/lib/supabase-server'
 
 const bebasNeue = Bebas_Neue({
@@ -46,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <BackgroundFog />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <AppProvider userId={user?.id}>
-            {children}
+            {user ? <GlobalChrome>{children}</GlobalChrome> : children}
           </AppProvider>
         </div>
       </body>

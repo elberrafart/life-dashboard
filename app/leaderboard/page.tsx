@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { getLeaderboard } from '@/app/actions/profiles'
 import { getLevelInfo } from '@/lib/types'
 
@@ -17,35 +16,8 @@ export default async function LeaderboardPage() {
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px' }}>
       <style>{`
-        .lb-home-btn:hover { border-color: var(--gold) !important; color: var(--gold) !important; }
         .lb-row:hover { background: rgba(255,255,255,0.03) !important; }
       `}</style>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
-        <div>
-          <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 36, letterSpacing: 5, color: 'var(--text)', lineHeight: 1 }}>
-            LEADERBOARD
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', letterSpacing: 2, textTransform: 'uppercase', marginTop: 6 }}>
-            Community Rankings · Sorted by XP
-          </div>
-        </div>
-        <Link
-          href="/"
-          className="lb-home-btn"
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 8, padding: '8px 16px', textDecoration: 'none',
-            color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5,
-            textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
-            transition: 'all 150ms', flexShrink: 0,
-          }}
-        >
-          ← Home
-        </Link>
-      </div>
 
       {error && (
         <div style={{ padding: '12px 16px', background: 'rgba(224,92,92,0.08)', border: '1px solid rgba(224,92,92,0.2)', borderRadius: 8, fontSize: 13, color: '#e05c5c', marginBottom: 24 }}>

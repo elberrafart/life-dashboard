@@ -1,15 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useApp } from '@/lib/context'
-import Header from '@/components/Header'
 import VisionBoard from '@/components/VisionBoard'
 import GoalsGrid from '@/components/GoalsGrid'
 import HabitsTracker from '@/components/HabitsTracker'
-import XPFeed from '@/components/XPFeed'
 import MotivationalQuote from '@/components/MotivationalQuote'
-import SettingsPanel from '@/components/SettingsPanel'
-import LevelUpModal from '@/components/LevelUpModal'
-import FloatingXPLayer from '@/components/FloatingXPLayer'
 import DailyJournal from '@/components/DailyJournal'
 import ProfileCard from '@/components/ProfileCard'
 import RoadmapTimeline from '@/components/RoadmapTimeline'
@@ -84,8 +79,6 @@ function SectionHeading({ children }: { children: string }) {
 
 export default function Page() {
   const { state, dispatch } = useApp()
-  const [feedOpen, setFeedOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     fetchCached('onboardingStatus', getOnboardingStatus, 10 * 60_000).then(complete => {
@@ -99,17 +92,6 @@ export default function Page() {
 
   return (
     <div style={{ minHeight: '100dvh' }}>
-      <FloatingXPLayer />
-      <LevelUpModal />
-
-      <Header onFeedOpen={() => setFeedOpen(true)} onSettingsOpen={() => setSettingsOpen(true)} />
-
-      <div className="main-wrap">
-        <style>{`
-          @media (min-width: 769px) {
-            .main-wrap { padding-left: 200px; }
-          }
-        `}</style>
       <main style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 'max(env(safe-area-inset-bottom), 40px)' }}>
         <style>{`
           @media (max-width: 640px) {
@@ -168,12 +150,6 @@ export default function Page() {
         </section>
 
       </main>
-      </div>
-
-      {/* XP feed drawer */}
-      {feedOpen && <XPFeed onClose={() => setFeedOpen(false)} />}
-
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }

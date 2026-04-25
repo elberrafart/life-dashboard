@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '@/lib/context'
 import { getUserCheckIns } from '@/app/actions/checkins'
-import Link from 'next/link'
 
 type CheckIn = {
   id: string; date: string; mood: string | null; note: string | null
@@ -73,24 +72,6 @@ export default function JournalPage() {
 
   return (
     <div style={{ minHeight: '100vh', padding: '0 0 60px' }}>
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid var(--border)', padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <Link
-          href="/"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 16px', color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600, textDecoration: 'none', transition: 'color 150ms, border-color 150ms' }}
-          onMouseOver={e => { e.currentTarget.style.color = 'var(--gold)'; e.currentTarget.style.borderColor = 'var(--gold)' }}
-          onMouseOut={e => { e.currentTarget.style.color = 'var(--text3)'; e.currentTarget.style.borderColor = 'var(--border)' }}
-        >
-          ← Dashboard
-        </Link>
-        <div>
-          <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 24, letterSpacing: 4, color: 'var(--text)' }}>JOURNAL HISTORY</div>
-          <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 2, textTransform: 'uppercase', marginTop: 1 }}>
-            {Object.keys(journalEntries).filter(d => journalEntries[d]?.trim()).length} entries · {checkIns.length} check-ins
-          </div>
-        </div>
-      </div>
-
       {/* Body */}
       <div className="journal-grid" style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 20px', display: 'grid', gridTemplateColumns: 'minmax(280px, 380px) 1fr', gap: 28, alignItems: 'start' }}>
 

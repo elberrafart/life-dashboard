@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import Link from 'next/link'
 import Phase1 from '@/components/identity/Phase1'
 import Phase2 from '@/components/identity/Phase2'
 import Phase3 from '@/components/identity/Phase3'
@@ -14,8 +13,6 @@ export default function IdentityPage() {
   return (
     <div className="id-page" style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px' }}>
       <style>{`
-        .id-home-btn:hover { border-color: var(--gold) !important; color: var(--gold) !important; }
-
         /* Worksheet contrast — brighter placeholders + input text on surface2 bg */
         .id-page input::placeholder,
         .id-page textarea::placeholder {
@@ -45,32 +42,6 @@ export default function IdentityPage() {
         .id-tab-phase { display: block; font-size: 9px; color: inherit; opacity: 0.6; margin-bottom: 3px; }
         .id-tab-label { display: block; font-family: var(--font-bebas); font-size: 14px; letter-spacing: 2px; }
       `}</style>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 36, letterSpacing: 5, color: 'var(--text)', lineHeight: 1 }}>
-            IDENTITY
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', letterSpacing: 2, textTransform: 'uppercase', marginTop: 6 }}>
-            Your workbook · auto-saves as you type
-          </div>
-        </div>
-        <Link
-          href="/"
-          className="id-home-btn"
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 8, padding: '8px 16px', textDecoration: 'none',
-            color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5,
-            textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
-            transition: 'all 150ms',
-          }}
-        >
-          ← Home
-        </Link>
-      </div>
 
       {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 32 }}>

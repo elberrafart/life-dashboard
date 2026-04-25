@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useApp } from '@/lib/context'
 import { getLevelInfo } from '@/lib/types'
 import { logout } from '@/app/actions/auth'
@@ -8,6 +9,12 @@ import { checkIsAdmin } from '@/app/actions/admin'
 import RanksModal from './RanksModal'
 
 export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () => void; onSettingsOpen: () => void }) {
+  const pathname = usePathname() ?? '/'
+  const isHome = pathname === '/'
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/'
+    return pathname === href || pathname.startsWith(href + '/')
+  }
   const { state, dispatch, totalXP, saveStatus } = useApp()
   const [editingName, setEditingName] = useState(false)
   const [nameVal, setNameVal] = useState(state.playerName)
@@ -44,6 +51,16 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
     textDecoration: 'none',
   }
 
+  const drawerLinkActive: React.CSSProperties = {
+    color: 'var(--gold)',
+    padding: '12px 0 12px 10px',
+    background: 'rgba(245,197,24,0.06)',
+    boxShadow: 'inset 3px 0 0 var(--gold)',
+  }
+
+  const drawerLinkFor = (href: string): React.CSSProperties =>
+    isActive(href) ? { ...drawerLinkStyle, ...drawerLinkActive } : drawerLinkStyle
+
   return (
     <>
       <style>{`
@@ -75,6 +92,11 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           text-decoration: none; cursor: pointer; width: 100%;
         }
         .left-nav-item:hover { border-color: var(--gold); color: var(--gold); }
+        .left-nav-item.active {
+          border-color: var(--gold); color: var(--gold);
+          background: rgba(245,197,24,0.08);
+          box-shadow: inset 3px 0 0 var(--gold);
+        }
         .left-nav-signout:hover { border-color: var(--red) !important; color: var(--red) !important; }
       `}</style>
 
@@ -181,45 +203,36 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           <span style={{ fontSize: 14 }}>📅</span> Book Now
         </a>
 
-        <a
-          href="https://wa.me/17783219094"
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => setDrawerOpen(false)}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            background: 'rgba(37,211,102,0.1)', color: '#25D366',
-            border: '1px solid rgba(37,211,102,0.35)',
-            padding: '12px', borderRadius: 8, margin: '0 0 12px',
-            fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase',
-            fontFamily: 'var(--font-dm)', textDecoration: 'none',
-          }}
-        >
-          <span style={{ fontSize: 14 }}>📞</span> Message Andrew
-        </a>
-
-        <Link href="/leaderboard" style={drawerLinkStyle}>
+        <Link href="/start-here" style={drawerLinkFor('/start-here')} onClick={() => setDrawerOpen(false)}>
+          <span style={{ fontSize: 18 }}>🚀</span> Start Here
+        </Link>
+        {!isHome && (
+          <Link href="/" style={drawerLinkFor('/')} onClick={() => setDrawerOpen(false)}>
+            <span style={{ fontSize: 18 }}>🏠</span> Home
+          </Link>
+        )}
+        <Link href="/leaderboard" style={drawerLinkFor('/leaderboard')} onClick={() => setDrawerOpen(false)}>
           <span style={{ fontSize: 18 }}>🏆</span> Leaderboard
         </Link>
-        <Link href="/kanban" style={drawerLinkStyle}>
+        <Link href="/kanban" style={drawerLinkFor('/kanban')} onClick={() => setDrawerOpen(false)}>
           <span style={{ fontSize: 18 }}>📋</span> Kanban
         </Link>
-        <Link href="/checkins" style={drawerLinkStyle}>
+        <Link href="/checkins" style={drawerLinkFor('/checkins')} onClick={() => setDrawerOpen(false)}>
           <span style={{ fontSize: 18 }}>✅</span> Check-Ins
         </Link>
-        <Link href="/knowledge" style={drawerLinkStyle}>
+        <Link href="/knowledge" style={drawerLinkFor('/knowledge')} onClick={() => setDrawerOpen(false)}>
           <span style={{ fontSize: 18 }}>📚</span> Knowledge
         </Link>
-        <Link href="/identity" style={drawerLinkStyle}>
+        <Link href="/identity" style={drawerLinkFor('/identity')} onClick={() => setDrawerOpen(false)}>
           <span style={{ fontSize: 18 }}>🧠</span> Identity
         </Link>
         {isAdmin && (
-          <Link href="/admin/clients" style={drawerLinkStyle}>
+          <Link href="/admin/clients" style={drawerLinkFor('/admin/clients')} onClick={() => setDrawerOpen(false)}>
             <span style={{ fontSize: 18 }}>👥</span> Clients
           </Link>
         )}
         {isAdmin && (
-          <Link href="/admin" style={drawerLinkStyle}>
+          <Link href="/admin" style={drawerLinkFor('/admin')} onClick={() => setDrawerOpen(false)}>
             <span style={{ fontSize: 18 }}>⚡</span> Admin Panel
           </Link>
         )}
@@ -325,23 +338,6 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
         {/* ── DESKTOP RIGHT ── */}
         <div className="header-hide-mobile" style={{ alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <div style={{ fontSize: 11, letterSpacing: 1, color: 'var(--text3)', textTransform: 'uppercase' }}>{today}</div>
-          <a
-            href="https://wa.me/17783219094"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Message Andrew on WhatsApp"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.35)',
-              borderRadius: 8, padding: '7px 10px', color: '#25D366',
-              fontSize: 18, lineHeight: 1, textDecoration: 'none',
-              transition: 'all 150ms',
-            }}
-            onMouseOver={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.2)'; e.currentTarget.style.borderColor = '#25D366' }}
-            onMouseOut={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.1)'; e.currentTarget.style.borderColor = 'rgba(37,211,102,0.35)' }}
-          >
-            📞
-          </a>
           <button onClick={onFeedOpen} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, padding: 8, borderRadius: 8, transition: 'color 150ms' }} title="XP Feed" onMouseOver={e => (e.currentTarget.style.color = 'var(--silver)')} onMouseOut={e => (e.currentTarget.style.color = 'var(--text3)')}>🔔</button>
           <button onClick={onSettingsOpen} style={{ background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--silver2)', fontSize: 20, padding: '7px 10px', borderRadius: 8, transition: 'all 150ms', lineHeight: 1 }} title="Settings" onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }} onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--silver2)' }}>⚙</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: saveStatus === 'saved' ? 'rgba(39,174,96,0.12)' : saveStatus === 'error' ? 'rgba(220,80,60,0.12)' : 'var(--surface)', border: `1px solid ${saveStatus === 'saved' ? 'var(--green)' : saveStatus === 'error' ? 'rgba(220,80,60,0.6)' : 'var(--border2)'}`, color: saveStatus === 'saved' ? 'var(--green)' : saveStatus === 'error' ? '#f4b8ad' : saveStatus === 'saving' ? 'var(--text3)' : 'var(--silver2)', borderRadius: 8, padding: '8px 16px', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', transition: 'all 400ms', fontFamily: 'var(--font-dm)', minWidth: 90, justifyContent: 'center' }}>
@@ -414,34 +410,44 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
           <span style={{ fontSize: 14 }}>📅</span> Book Now
         </a>
 
-        <Link href="/leaderboard" className="left-nav-item">
+        <Link href="/start-here" className={`left-nav-item${isActive('/start-here') ? ' active' : ''}`}>
+          <span style={{ fontSize: 14 }}>🚀</span> Start Here
+        </Link>
+
+        {!isHome && (
+          <Link href="/" className="left-nav-item">
+            <span style={{ fontSize: 14 }}>🏠</span> Home
+          </Link>
+        )}
+
+        <Link href="/leaderboard" className={`left-nav-item${isActive('/leaderboard') ? ' active' : ''}`}>
           <span style={{ fontSize: 14 }}>🏆</span> Leaderboard
         </Link>
 
-        <Link href="/kanban" className="left-nav-item">
+        <Link href="/kanban" className={`left-nav-item${isActive('/kanban') ? ' active' : ''}`}>
           <span style={{ fontSize: 14 }}>📋</span> Kanban
         </Link>
 
-        <Link href="/checkins" className="left-nav-item">
+        <Link href="/checkins" className={`left-nav-item${isActive('/checkins') ? ' active' : ''}`}>
           <span style={{ fontSize: 14 }}>✅</span> Check-Ins
         </Link>
 
-        <Link href="/knowledge" className="left-nav-item">
+        <Link href="/knowledge" className={`left-nav-item${isActive('/knowledge') ? ' active' : ''}`}>
           <span style={{ fontSize: 14 }}>📚</span> Knowledge
         </Link>
 
-        <Link href="/identity" className="left-nav-item">
+        <Link href="/identity" className={`left-nav-item${isActive('/identity') ? ' active' : ''}`}>
           <span style={{ fontSize: 14 }}>🧠</span> Identity
         </Link>
 
         {isAdmin && (
-          <Link href="/admin/clients" className="left-nav-item">
+          <Link href="/admin/clients" className={`left-nav-item${isActive('/admin/clients') ? ' active' : ''}`}>
             <span style={{ fontSize: 14 }}>👥</span> Clients
           </Link>
         )}
 
         {isAdmin && (
-          <Link href="/admin" className="left-nav-item">
+          <Link href="/admin" className={`left-nav-item${isActive('/admin') ? ' active' : ''}`}>
             <span style={{ fontSize: 14 }}>⚡</span> Admin
           </Link>
         )}

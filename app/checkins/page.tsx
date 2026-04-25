@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import CheckIn from '@/components/CheckIn'
 import CheckInCalendar from '@/components/CheckInCalendar'
 import { getUserCheckIns, type CheckIn as CheckInRow } from '@/app/actions/checkins'
@@ -20,36 +19,6 @@ export default function CheckInsPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px' }}>
-      <style>{`
-        .ci-home-btn:hover { border-color: var(--gold) !important; color: var(--gold) !important; }
-      `}</style>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32, gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 36, letterSpacing: 5, color: 'var(--text)', lineHeight: 1 }}>
-            CHECK-INS
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', letterSpacing: 2, textTransform: 'uppercase', marginTop: 6 }}>
-            Daily coach check-in · streak history
-          </div>
-        </div>
-        <Link
-          href="/"
-          className="ci-home-btn"
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 8, padding: '8px 16px', textDecoration: 'none',
-            color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5,
-            textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
-            transition: 'all 150ms',
-          }}
-        >
-          ← Home
-        </Link>
-      </div>
-
       {/* Today's check-in */}
       <section style={{ marginBottom: 36 }}>
         <div style={{
