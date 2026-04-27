@@ -15,14 +15,17 @@ const LOGIN_LIMIT = { maxAttempts: 5, windowMs: 15 * 60 * 1000 }
 const RESET_LIMIT = { maxAttempts: 3, windowMs: 15 * 60 * 1000 }
 
 export async function login(_state: LoginState, formData: FormData): Promise<LoginState> {
-  const email = formData.get('email') as string
+  // Mobile keyboards/autofill commonly append whitespace and uppercase the
+  // first character of an email. Supabase compares emails case-insensitively
+  // but does NOT trim — so an untrimmed email silently fails to match.
+  const email = (formData.get('email') as string)?.trim().toLowerCase()
   const password = formData.get('password') as string
 
   if (!email || !password) {
     return { error: 'Email and password are required.' }
   }
 
-  const { allowed } = rateLimit(`login:${email.toLowerCase().trim()}`, LOGIN_LIMIT)
+  const { allowed } = rateLimit(`login:${email}`, LOGIN_LIMIT)
   if (!allowed) {
     return { error: 'Too many login attempts. Please try again later.' }
   }
@@ -57,7 +60,7 @@ export async function resetPassword(_state: ResetPasswordState, formData: FormDa
     redirectTo: `${env.SITE_URL}/auth/callback?type=recovery`,
   })
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'Could not send reset email. Please try again.' }
   return { success: 'Check your email for a reset link.' }
 }
 
@@ -80,7 +83,7 @@ export async function sendSelfPasswordReset(): Promise<{ error?: string; success
   const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
     redirectTo: `${env.SITE_URL}/auth/callback?type=recovery`,
   })
-  if (error) return { error: error.message }
+  if (error) return { error: 'Could not send reset email. Please try again.' }
   return { success: `Reset link sent to ${user.email}` }
 }
 

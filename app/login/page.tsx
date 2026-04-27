@@ -132,6 +132,10 @@ export default function LoginPage() {
                     name="email"
                     type="email"
                     autoComplete="email"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     required
                     placeholder="you@example.com"
                     style={{
@@ -198,6 +202,10 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   placeholder="you@example.com"
                   style={{
@@ -237,6 +245,9 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   autoComplete="current-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   placeholder="••••••••"
                   style={{
