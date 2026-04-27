@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Allow LAN hosts (e.g. iPhone hitting the Mac's local IP) to load
+  // dev-only resources like /_next/webpack-hmr. Dev-only — has no effect
+  // in production builds.
+  allowedDevOrigins: ['192.168.0.248'],
   experimental: {
     serverActions: {
       // Vision board uploads ship base64-encoded image data alongside app state.
