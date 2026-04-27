@@ -79,61 +79,32 @@ export default function StartHerePage() {
         </div>
       </div>
 
-      {/* Video placeholder */}
+      {/* Welcome video */}
       <div
-        aria-label="Welcome video placeholder"
         style={{
           position: 'relative',
           width: '100%',
           aspectRatio: '16 / 9',
           marginBottom: 36,
-          background:
-            'linear-gradient(135deg, rgba(245,197,24,0.06) 0%, rgba(10,10,8,0.9) 60%)',
-          border: '1px dashed var(--border2)',
           borderRadius: 12,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           overflow: 'hidden',
+          border: '1px solid var(--border)',
+          background: '#000',
         }}
       >
-        {/* soft gold glow accent */}
-        <div
-          aria-hidden
+        <iframe
+          src="https://www.loom.com/embed/50756d86202a4ba0b59ae4bfee82bd3a"
+          title="Welcome video"
+          allow="fullscreen"
+          allowFullScreen
           style={{
-            position: 'absolute', inset: 0,
-            background: 'radial-gradient(circle at 50% 45%, rgba(245,197,24,0.12), transparent 55%)',
-            pointerEvents: 'none',
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            border: 0,
           }}
         />
-        <div style={{ textAlign: 'center', zIndex: 1 }}>
-          <div
-            style={{
-              width: 72, height: 72, borderRadius: '50%',
-              background: 'rgba(245,197,24,0.08)',
-              border: '1px solid rgba(245,197,24,0.35)',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: 14,
-            }}
-          >
-            <div
-              aria-hidden
-              style={{
-                width: 0, height: 0,
-                borderTop: '14px solid transparent',
-                borderBottom: '14px solid transparent',
-                borderLeft: '22px solid var(--gold)',
-                marginLeft: 6,
-              }}
-            />
-          </div>
-          <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 20, letterSpacing: 3, color: 'var(--silver)' }}>
-            WELCOME VIDEO COMING SOON
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 4, fontFamily: 'var(--font-dm)' }}>
-            Andrew will record this for you
-          </div>
-        </div>
       </div>
 
       {/* Welcome section */}

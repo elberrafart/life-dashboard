@@ -99,6 +99,7 @@ export function proxy(request: NextRequest) {
       "img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com",  // data: for vision images, YouTube CDNs for Knowledge Hub thumbnails
       "font-src 'self'",                                   // next/font self-hosts Google Fonts
       "connect-src 'self' https://*.supabase.co",          // Supabase auth (client-side token refresh)
+      "frame-src https://www.loom.com",                    // Loom embeds (welcome video on /start-here)
       "frame-ancestors 'none'",                            // Prevent framing (clickjacking)
       "base-uri 'self'",
       "form-action 'self'",
