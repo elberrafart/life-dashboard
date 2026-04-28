@@ -47,6 +47,41 @@ export async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
+// ── Bundled initial-load fetch ───────────────────────────────────────────────
+// The admin panel needs both the users list and the admins list on every
+// mount. Fetching them as one server action saves a round trip vs two
+// parallel client-side calls (single auth check, single HTTP hop), and
+// running the two Supabase queries in parallel inside keeps wall-clock
+// time the same as the old setup.
+
+export async function loadAdminPanel(): Promise<{
+  users: { id: string; email: string; createdAt: string; lastSignIn: string | null; confirmed: boolean }[]
+  admins: { email: string }[]
+  error?: string
+}> {
+  try {
+    await assertAdmin()
+    const supabase = createAdminClient()
+    const [authResult, adminsResult] = await Promise.all([
+      supabase.auth.admin.listUsers(),
+      supabase.from('app_admins').select('email').order('email'),
+    ])
+    if (authResult.error) return { error: authResult.error.message, users: [], admins: [] }
+    return {
+      users: authResult.data.users.map(u => ({
+        id: u.id,
+        email: u.email ?? '',
+        createdAt: u.created_at,
+        lastSignIn: u.last_sign_in_at ?? null,
+        confirmed: !!u.email_confirmed_at,
+      })),
+      admins: adminsResult.data ?? [],
+    }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Failed to load', users: [], admins: [] }
+  }
+}
+
 // ── User management ──────────────────────────────────────────────────────────
 
 export async function listUsers() {

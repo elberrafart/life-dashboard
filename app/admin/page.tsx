@@ -1,8 +1,9 @@
 'use client'
 import { useState, useEffect, useTransition } from 'react'
 import Link from 'next/link'
-import { listUsers, createUser, sendPasswordReset, deleteUser, listAdmins, addAdmin, removeAdmin } from '@/app/actions/admin'
+import { loadAdminPanel, createUser, sendPasswordReset, deleteUser, listAdmins, addAdmin, removeAdmin } from '@/app/actions/admin'
 import { getAllCheckIns, type CheckIn } from '@/app/actions/checkins'
+import { fetchCached, invalidate } from '@/lib/dataCache'
 
 type User = { id: string; email: string; createdAt: string; lastSignIn: string | null; confirmed: boolean }
 type Admin = { email: string }
@@ -12,7 +13,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('users')
   const [users, setUsers] = useState<User[]>([])
   const [admins, setAdmins] = useState<Admin[]>([])
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([])
+  const [checkIns, setCheckIns] = useState<CheckIn[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [inviteEmail, setInviteEmail] = useState('')
@@ -33,21 +34,34 @@ export default function AdminPage() {
     setTimeout(() => setError(null), 4000)
   }
 
-  async function loadUsers() {
-    const result = await listUsers()
-    if ('error' in result && result.error) err(new Error(result.error))
-    else setUsers(result.users ?? [])
+  async function loadPanel() {
+    const result = await fetchCached('adminPanel', loadAdminPanel, 30_000)
+    if (result.error) err(new Error(result.error))
+    setUsers(result.users)
+    setAdmins(result.admins)
   }
 
   async function loadAdmins() {
+    invalidate('adminPanel')
     setAdmins(await listAdmins())
   }
 
   async function loadCheckIns() {
-    try { setCheckIns(await getAllCheckIns()) } catch (e) { err(e) }
+    try {
+      const data = await fetchCached('adminCheckIns', getAllCheckIns, 30_000)
+      setCheckIns(data)
+    } catch (e) { err(e) }
   }
 
-  useEffect(() => { loadUsers(); loadAdmins(); loadCheckIns() }, [])
+  // Initial load: only users + admins. Check-ins are lazy-loaded the first
+  // time the user clicks the Check-ins tab so they don't pay for that fetch
+  // on every admin page visit.
+  useEffect(() => { loadPanel() }, [])
+
+  // Lazy-load check-ins when the tab is opened.
+  useEffect(() => {
+    if (tab === 'checkins' && checkIns === null) loadCheckIns()
+  }, [tab, checkIns])
 
   function handleCreate() {
     if (!inviteEmail.trim()) return
@@ -62,8 +76,8 @@ export default function AdminPage() {
       setInviteEmail('')
       setInviteAsAdmin(false)
       setNewCredentials({ email, password: result.tempPassword! })
-      loadUsers()
-      loadAdmins()
+      invalidate('adminPanel')
+      loadPanel()
     })
   }
 
@@ -86,6 +100,7 @@ export default function AdminPage() {
         setUsers(prev => [...prev, user].sort((a, b) => a.email.localeCompare(b.email)))
         err(new Error(result.error))
       } else {
+        invalidate('adminPanel')
         flash(`${user.email} has been deleted.`)
       }
     })
@@ -302,7 +317,7 @@ export default function AdminPage() {
         <button style={tabStyle(tab === 'users')} onClick={() => setTab('users')}>Users</button>
         <button style={tabStyle(tab === 'admins')} onClick={() => setTab('admins')}>Admins</button>
         <button style={tabStyle(tab === 'checkins')} onClick={() => setTab('checkins')}>
-          Check-ins {checkIns.length > 0 && <span style={{ marginLeft: 6, background: 'var(--gold)', color: 'var(--bg)', borderRadius: 99, padding: '1px 7px', fontSize: 9, fontWeight: 700 }}>{checkIns.length}</span>}
+          Check-ins {checkIns && checkIns.length > 0 && <span style={{ marginLeft: 6, background: 'var(--gold)', color: 'var(--bg)', borderRadius: 99, padding: '1px 7px', fontSize: 9, fontWeight: 700 }}>{checkIns.length}</span>}
         </button>
       </div>
 
@@ -474,17 +489,23 @@ export default function AdminPage() {
         <>
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', fontSize: 11, letterSpacing: 2, color: 'var(--silver)', textTransform: 'uppercase' }}>
-              Recent Check-Ins ({checkIns.length})
+              Recent Check-Ins ({checkIns?.length ?? 0})
             </div>
 
-            {checkIns.length === 0 && (
+            {checkIns === null && (
+              <div style={{ padding: '40px 24px', color: 'var(--text3)', fontSize: 13, textAlign: 'center' }}>
+                Loading check-ins…
+              </div>
+            )}
+
+            {checkIns !== null && checkIns.length === 0 && (
               <div style={{ padding: '40px 24px', color: 'var(--text3)', fontSize: 13, textAlign: 'center', lineHeight: 1.8 }}>
                 No check-ins yet.<br />
                 <span style={{ fontSize: 11 }}>Users submit check-ins from their dashboard.</span>
               </div>
             )}
 
-            {checkIns.map((ci, i) => (
+            {checkIns?.map((ci, i) => (
               <div
                 key={ci.id}
                 style={{
