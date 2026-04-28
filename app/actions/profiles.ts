@@ -188,11 +188,15 @@ export type UserProfile = {
   display_name: string | null
   xp_total: number
   streak: number
-  goals: { id: string; name: string; emoji: string; category: string; xp: number; taskCount: number }[]
-  habits: { id: string; label: string }[]
-  journal_dates: string[]
+  goals_count: number
   kanban_done: number
   updated_at: string
+  // True iff the user has completed /setup and has a `user_profiles` row.
+  // Invitees who haven't signed in (or signed in but bailed before setup)
+  // surface here as `onboarded: false` with zero stats.
+  onboarded: boolean
+  created_at: string
+  last_sign_in_at: string | null
 }
 
 export async function getLeaderboard(): Promise<Pick<UserProfile, 'user_id' | 'display_name' | 'xp_total' | 'streak' | 'kanban_done' | 'updated_at'>[]> {
@@ -218,18 +222,58 @@ export async function getAllProfiles(): Promise<UserProfile[]> {
   const isAdmin = await checkIsAdmin()
   if (!isAdmin) throw new Error('Unauthorized')
 
-  // Admin client list only needs summary columns — never pull `app_state` or
-  // `vision_images`, which can be multi-MB JSONB blobs per user and turn this
-  // into a 2-3 second query. Full app_state is fetched on-demand by the
-  // client detail view via `adminGetUserAppState`.
+  // Source of truth for "every client" is auth.users — invitees who never
+  // signed in (or signed in but bailed before setup) must still appear here
+  // with onboarded=false. Profile data is left-joined; missing rows surface
+  // as zero-stats placeholders.
+  //
+  // The profile query only pulls summary columns. Never include `app_state`,
+  // `vision_images`, `habits`, or `journal_dates` — they're multi-MB JSONB
+  // blobs that aren't shown on the list page (the detail view fetches its
+  // own data via `adminGetUserAppState`).
   const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .select('user_id, user_email, display_name, xp_total, streak, goals, habits, journal_dates, kanban_done, updated_at')
-    .order('updated_at', { ascending: false })
 
-  if (error) throw new Error(error.message)
-  return data ?? []
+  const [authResult, profilesResult] = await Promise.all([
+    supabase.auth.admin.listUsers(),
+    supabase
+      .from('user_profiles')
+      .select('user_id, display_name, xp_total, streak, goals, kanban_done, updated_at, onboarding_complete'),
+  ])
+
+  if (authResult.error) throw new Error(authResult.error.message)
+  if (profilesResult.error) throw new Error(profilesResult.error.message)
+
+  const profileById = new Map(
+    (profilesResult.data ?? []).map(p => [p.user_id as string, p]),
+  )
+
+  const merged: UserProfile[] = authResult.data.users.map(u => {
+    const p = profileById.get(u.id)
+    const goals = (p?.goals as unknown[] | null) ?? []
+    return {
+      user_id: u.id,
+      user_email: u.email ?? '',
+      display_name: (p?.display_name as string | null) ?? null,
+      xp_total: (p?.xp_total as number) ?? 0,
+      streak: (p?.streak as number) ?? 0,
+      goals_count: Array.isArray(goals) ? goals.length : 0,
+      kanban_done: (p?.kanban_done as number) ?? 0,
+      updated_at: (p?.updated_at as string) ?? u.created_at,
+      onboarded: p?.onboarding_complete === true,
+      created_at: u.created_at,
+      last_sign_in_at: u.last_sign_in_at ?? null,
+    }
+  })
+
+  // Onboarded users first (most recently active), then never-onboarded
+  // sorted by who was invited most recently — that's the order an admin
+  // wants to see "who still needs to get set up?".
+  return merged.sort((a, b) => {
+    if (a.onboarded !== b.onboarded) return a.onboarded ? -1 : 1
+    const aDate = a.onboarded ? a.updated_at : a.created_at
+    const bDate = b.onboarded ? b.updated_at : b.created_at
+    return bDate.localeCompare(aDate)
+  })
 }
 
 export async function adminGetUserAppState(userId: string): Promise<AppState | null> {

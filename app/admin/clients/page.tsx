@@ -604,12 +604,13 @@ export default function ClientsPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {profiles.map(p => {
           const level = getLevelInfo(p.xp_total, p.streak)
+          const dim = !p.onboarded
           return (
             <div
               key={p.user_id}
               onClick={() => setSelected(p)}
               className="card"
-              style={{ padding: '18px 24px', cursor: 'pointer', display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 16, transition: 'border-color 150ms' }}
+              style={{ padding: '18px 24px', cursor: 'pointer', display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 16, transition: 'border-color 150ms', opacity: dim ? 0.7 : 1 }}
               onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--gold)')}
               onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
@@ -618,20 +619,34 @@ export default function ClientsPage() {
                   <span style={{ fontSize: 14, color: 'var(--text)', fontFamily: 'var(--font-dm)', fontWeight: 700 }}>
                     {p.display_name || p.user_email}
                   </span>
-                  <span style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, background: 'rgba(201,168,76,0.12)', color: 'var(--gold)', border: '1px solid rgba(201,168,76,0.3)' }}>
-                    {level.emoji} {level.name}
-                  </span>
+                  {p.onboarded ? (
+                    <span style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, background: 'rgba(201,168,76,0.12)', color: 'var(--gold)', border: '1px solid rgba(201,168,76,0.3)' }}>
+                      {level.emoji} {level.name}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, background: 'rgba(224,92,92,0.1)', color: '#e05c5c', border: '1px solid rgba(224,92,92,0.25)' }}>
+                      Not Onboarded
+                    </span>
+                  )}
                 </div>
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>{p.xp_total.toLocaleString()} XP</span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>{p.streak}d streak</span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>{p.goals?.length ?? 0} goals</span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>{p.kanban_done} tasks done</span>
-                </div>
+                {p.onboarded ? (
+                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11, color: 'var(--text3)' }}>{p.xp_total.toLocaleString()} XP</span>
+                    <span style={{ fontSize: 11, color: 'var(--text3)' }}>{p.streak}d streak</span>
+                    <span style={{ fontSize: 11, color: 'var(--text3)' }}>{p.goals_count} goals</span>
+                    <span style={{ fontSize: 11, color: 'var(--text3)' }}>{p.kanban_done} tasks done</span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {p.last_sign_in_at ? 'Signed in but never finished setup' : 'Invited — never signed in'}
+                  </div>
+                )}
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>
-                  {new Date(p.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {p.onboarded
+                    ? new Date(p.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    : `Invited ${new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                 </div>
                 <div style={{ fontSize: 10, color: 'var(--gold)', letterSpacing: 1 }}>View →</div>
               </div>
