@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useApp } from '@/lib/context'
 import VisionBoard from '@/components/VisionBoard'
 import GoalsGrid from '@/components/GoalsGrid'
@@ -8,8 +8,6 @@ import MotivationalQuote from '@/components/MotivationalQuote'
 import DailyJournal from '@/components/DailyJournal'
 import ProfileCard from '@/components/ProfileCard'
 import RoadmapTimeline from '@/components/RoadmapTimeline'
-import { getOnboardingStatus } from '@/app/actions/onboarding'
-import { fetchCached } from '@/lib/dataCache'
 import { Goal } from '@/lib/types'
 
 export type Tab = 'vision' | 'goals' | 'habits' | 'board' | 'journal'
@@ -79,12 +77,6 @@ function SectionHeading({ children }: { children: string }) {
 
 export default function Page() {
   const { state, dispatch } = useApp()
-
-  useEffect(() => {
-    fetchCached('onboardingStatus', getOnboardingStatus, 10 * 60_000).then(complete => {
-      if (!complete) window.location.replace('/setup')
-    })
-  }, [])
 
   function restoreGoal(id: string) {
     dispatch({ type: 'RESTORE_GOAL', payload: id })

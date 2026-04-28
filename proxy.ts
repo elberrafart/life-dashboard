@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 const PROJECT_REF = 'ecpldhnaocwaiefcxzvx'
 const AUTH_COOKIE_NAME = `sb-${PROJECT_REF}-auth-token`
@@ -49,11 +50,45 @@ function isRecoverySession(accessToken: string): boolean {
   }
 }
 
-export function proxy(request: NextRequest) {
+function getUserId(accessToken: string): string | null {
+  try {
+    const payload = JSON.parse(atob(accessToken.split('.')[1]))
+    return typeof payload?.sub === 'string' ? payload.sub : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Returns true iff the user has a `user_profiles` row with onboarding_complete.
+ * Anonymous on errors — falling back to "not onboarded" forces the user through
+ * /setup, which is the safe default if the DB call ever fails.
+ */
+async function hasCompletedOnboarding(userId: string): Promise<boolean> {
+  try {
+    const supabase = createSupabaseClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    )
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('onboarding_complete')
+      .eq('user_id', userId)
+      .single()
+    return data?.onboarding_complete === true
+  } catch {
+    return false
+  }
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isLoginPage = pathname === '/login'
   const isUpdatePassword = pathname === '/update-password'
   const isAuthCallback = pathname.startsWith('/auth/')
+  const isSetupPage = pathname === '/setup'
+  const isAdminRoute = pathname.startsWith('/admin')
   const isPublicPage = isLoginPage || isAuthCallback || isUpdatePassword
 
   const accessToken = readAccessToken(request)
@@ -64,7 +99,7 @@ export function proxy(request: NextRequest) {
   // /auth/callback (e.g. Supabase Site URL misconfigured) and lands the user
   // on the dashboard already authenticated.
   if (hasSession && !isUpdatePassword && !isAuthCallback && !isLoginPage) {
-    if (isRecoverySession(accessToken)) {
+    if (isRecoverySession(accessToken!)) {
       return NextResponse.redirect(new URL('/update-password', request.url))
     }
   }
@@ -76,10 +111,29 @@ export function proxy(request: NextRequest) {
   if (hasSession && isLoginPage) {
     // Don't trap a user with a recovery session at /login — let them through
     // to /update-password instead.
-    if (isRecoverySession(accessToken)) {
+    if (isRecoverySession(accessToken!)) {
       return NextResponse.redirect(new URL('/update-password', request.url))
     }
     return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  // Onboarding gate: any authed user without a completed `user_profiles` row
+  // is forced to /setup. This is what keeps the admin "Users" tab and the
+  // "Clients" page in sync — no more invitees who slip past setup and live
+  // as a session-only ghost. GET only (server actions stay snappy), and
+  // /admin/* is exempt so an admin without a profile of their own can still
+  // reach the panel.
+  if (
+    request.method === 'GET' &&
+    hasSession &&
+    !isPublicPage &&
+    !isSetupPage &&
+    !isAdminRoute
+  ) {
+    const userId = getUserId(accessToken!)
+    if (userId && !(await hasCompletedOnboarding(userId))) {
+      return NextResponse.redirect(new URL('/setup', request.url))
+    }
   }
 
   const response = NextResponse.next()
