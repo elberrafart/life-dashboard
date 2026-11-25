@@ -8,6 +8,7 @@ import MotivationalQuote from '@/components/MotivationalQuote'
 import DailyJournal from '@/components/DailyJournal'
 import ProfileCard from '@/components/ProfileCard'
 import RoadmapTimeline from '@/components/RoadmapTimeline'
+import DashboardModules from '@/components/modules/DashboardModules'
 import { Goal } from '@/lib/types'
 
 export type Tab = 'vision' | 'goals' | 'habits' | 'board' | 'journal'
@@ -106,6 +107,9 @@ export default function Page() {
             .dash-two-col { grid-template-columns: 1fr; gap: 24px; }
           }
         `}</style>
+
+        {/* Admin-built modules with the "dashboard" placement */}
+        <DashboardModules />
 
         {/* Row 2: Vision Board (full width) */}
         <section style={{ marginTop: 32, padding: '0 20px' }}>

@@ -150,10 +150,10 @@ export async function proxy(request: NextRequest) {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  // Next.js hydration requires inline scripts
       "style-src 'self' 'unsafe-inline'",                  // App uses inline styles extensively
-      "img-src 'self' data: blob: https://i.ytimg.com https://img.youtube.com",  // data: for vision images, YouTube CDNs for Knowledge Hub thumbnails
+      "img-src 'self' data: blob: https:",               // data: for vision images; any https image for admin-built module image blocks
       "font-src 'self'",                                   // next/font self-hosts Google Fonts
       "connect-src 'self' https://*.supabase.co",          // Supabase auth (client-side token refresh)
-      "frame-src https://www.loom.com",                    // Loom embeds (welcome video on /start-here)
+      "frame-src https://www.loom.com https://www.youtube-nocookie.com https://www.youtube.com",  // Loom + YouTube embeds (start-here, module video blocks)
       "frame-ancestors 'none'",                            // Prevent framing (clickjacking)
       "base-uri 'self'",
       "form-action 'self'",

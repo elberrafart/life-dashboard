@@ -295,6 +295,21 @@ export default function AdminPage() {
             📚 Knowledge Hub
           </Link>
           <Link
+            href="/admin/modules"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '8px 16px', textDecoration: 'none',
+              color: 'var(--text3)', fontSize: 11, letterSpacing: 1.5,
+              textTransform: 'uppercase', fontFamily: 'var(--font-dm)', fontWeight: 600,
+              transition: 'all 150ms',
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)' }}
+          >
+            🧩 Modules
+          </Link>
+          <Link
             href="/"
             style={{
               display: 'flex', alignItems: 'center', gap: 6,

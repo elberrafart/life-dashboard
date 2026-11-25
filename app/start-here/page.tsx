@@ -1,4 +1,9 @@
-export default function StartHerePage() {
+import { getModulesFor } from '@/app/actions/modules'
+import ModuleBlocks from '@/components/modules/ModuleBlocks'
+
+export default async function StartHerePage() {
+  const extraModules = await getModulesFor('start-here')
+
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px' }}>
       <style>{`
@@ -227,6 +232,14 @@ export default function StartHerePage() {
           </ul>
         </div>
       </section>
+
+      {/* Admin-built modules with the "start-here" placement */}
+      {extraModules.map(mod => (
+        <section key={mod.id} style={{ marginTop: 40 }}>
+          <div className="sh-section-label">{mod.icon} {mod.title}</div>
+          <ModuleBlocks blocks={mod.blocks} />
+        </section>
+      ))}
     </div>
   )
 }

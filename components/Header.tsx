@@ -6,6 +6,8 @@ import { useApp } from '@/lib/context'
 import { getLevelInfo } from '@/lib/types'
 import { logout } from '@/app/actions/auth'
 import { checkIsAdmin } from '@/app/actions/admin'
+import { getNavModules } from '@/app/actions/modules'
+import { fetchCached } from '@/lib/dataCache'
 import RanksModal from './RanksModal'
 
 export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () => void; onSettingsOpen: () => void }) {
@@ -24,6 +26,7 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
     return sessionStorage.getItem('ea-is-admin') === '1'
   })
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [navModules, setNavModules] = useState<{ slug: string; title: string; icon: string }[]>([])
   const levelInfo = getLevelInfo(totalXP, state.streak ?? 0)
 
   useEffect(() => {
@@ -31,6 +34,7 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
       setIsAdmin(result)
       sessionStorage.setItem('ea-is-admin', result ? '1' : '0')
     })
+    fetchCached('navModules', getNavModules, 60_000).then(setNavModules).catch(() => {})
   }, [])
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
@@ -226,6 +230,11 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
         <Link href="/identity" style={drawerLinkFor('/identity')} onClick={() => setDrawerOpen(false)}>
           <span style={{ fontSize: 18 }}>🧠</span> Identity
         </Link>
+        {navModules.map(m => (
+          <Link key={m.slug} href={`/m/${m.slug}`} style={drawerLinkFor(`/m/${m.slug}`)} onClick={() => setDrawerOpen(false)}>
+            <span style={{ fontSize: 18 }}>{m.icon}</span> {m.title}
+          </Link>
+        ))}
         {isAdmin && (
           <Link href="/admin/clients" style={drawerLinkFor('/admin/clients')} onClick={() => setDrawerOpen(false)}>
             <span style={{ fontSize: 18 }}>👥</span> Clients
@@ -439,6 +448,12 @@ export default function Header({ onFeedOpen, onSettingsOpen }: { onFeedOpen: () 
         <Link href="/identity" className={`left-nav-item${isActive('/identity') ? ' active' : ''}`}>
           <span style={{ fontSize: 14 }}>🧠</span> Identity
         </Link>
+
+        {navModules.map(m => (
+          <Link key={m.slug} href={`/m/${m.slug}`} className={`left-nav-item${isActive(`/m/${m.slug}`) ? ' active' : ''}`}>
+            <span style={{ fontSize: 14 }}>{m.icon}</span> {m.title}
+          </Link>
+        ))}
 
         {isAdmin && (
           <Link href="/admin/clients" className={`left-nav-item${isActive('/admin/clients') ? ' active' : ''}`}>
